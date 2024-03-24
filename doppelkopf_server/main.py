@@ -1,0 +1,54 @@
+from fastapi import FastAPI, HTTPException, Query
+
+from doppelkopf_server.game import Game
+from doppelkopf_server.schemas import *
+from typing import List
+import secrets
+
+app = FastAPI()
+
+app.games = dict()
+
+
+@app.post("/new_game")
+def new_game() -> str:
+    """
+    Creates a new game where players can join.
+    The game is reachable by the game id returned on a successful call.
+    """
+    gid = str(secrets.token_hex(6))
+    app.games[gid] = Game()
+    return gid
+
+@app.get("/{game_id}")
+async def get_events(game_id, from_event_id:int=0) -> List[Event]:
+    """
+    Get all events in this game in chronological order.
+    If provides, only events after the provided event id are returned.
+    """
+    return app.games[game_id].get_events(from_event_id)
+
+@app.post("/{game_id}/join")
+def join(game_id, player_name:str) -> str:
+    """
+    Join the game with provided game id as player with the provided name.
+    A player authentication token is returned, which is needed to perform
+    actions as the player.
+    """
+    return app.games[game_id].join(player_name)
+
+@app.get("/{game_id}/cards")
+async def get_cards(game_id, player_token:str) -> List[Card]:
+    """
+    Get the cards the player has on the hand.
+    Played cards will not appear here.
+    """
+    return app.games[game_id].get_cards(player_token)
+
+@app.post("/{game_id}/event")
+def new_event(game_id, player_token:str, event:Event) -> bool:
+    """
+    Send a new event.
+    The event will be validated, i.e. it is checked whether the action is legal.
+    """
+    return app.games[game_id].new_event(player_token, event)
