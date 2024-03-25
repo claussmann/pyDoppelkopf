@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from enum import Enum
 from typing import List
 
@@ -103,7 +103,6 @@ class Absage(Enum):
 
 
 class ServerMsg(Enum):
-    CHAT = "CHAT"
     GAME_MODE = "GAME_MODE"
     WAIT_ANSAGE = "WAIT_ANSAGE"
 
@@ -114,6 +113,18 @@ class Event(BaseModel):
     event_type: EventType = Field(frozen=True, example="KARTE")
     content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True, example="H10")
     additional_data: str = Field(default=None, example="", description="Required for a few events, such as chat messages.")
+
+    @model_validator(mode='after')
+    def check_content_matches_event_type(self):
+        if self.event_type == EventType.KARTE and type(self.content) != Card:
+            raise ValueError('event type and content do not match')
+        if self.event_type == EventType.ABSAGE and type(self.content) != Absage:
+            raise ValueError('event type and content do not match')
+        if self.event_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
+            raise ValueError('event type and content do not match')
+        if self.event_type == EventType.SERVER and type(self.content) != ServerMsg:
+            raise ValueError('event type and content do not match')
+        return self
 
 class GameInfo(BaseModel):
     game_id: str = Field(default=None, example="fa4232", description="Game ID")
