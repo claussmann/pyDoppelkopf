@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 
 from doppelkopf_server.game import Game
 from doppelkopf_server.schemas import *
-from typing import List
+from typing import List, Annotated
 import secrets
 
 app = FastAPI()
@@ -30,7 +30,7 @@ async def get_game_info(game_id) -> GameInfo:
     return ret
 
 @app.post("/{game_id}/join")
-def join(game_id, player_name:str) -> str:
+def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\-\_]*$")]) -> str:
     """
     Join the game with provided game id as player with the provided name.
     A player authentication token is returned, which is needed to perform
