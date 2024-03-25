@@ -38,6 +38,7 @@ class Game():
 
     def new_event(self, token, event) -> bool:
         if self.active_round != None:
-            # TODO: Validate Player token.
-            return self.active_round.new_event(event)
+            if token in self.players:
+                if self.players[token] == event.player_name:
+                    return self.active_round.new_event(event)
         return False
