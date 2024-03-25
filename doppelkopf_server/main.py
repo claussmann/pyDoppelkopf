@@ -21,12 +21,13 @@ def new_game() -> str:
     return gid
 
 @app.get("/{game_id}")
-async def get_events(game_id, from_event_id:int=0) -> List[Event]:
+async def get_game_info(game_id) -> GameInfo:
     """
-    Get all events in this game in chronological order.
-    If provides, only events after the provided event id are returned.
+    Get game info such as players and round count.
     """
-    return app.games[game_id].get_events(from_event_id)
+    ret = app.games[game_id].get_game_info()
+    ret.game_id = game_id
+    return ret
 
 @app.post("/{game_id}/join")
 def join(game_id, player_name:str) -> str:
@@ -44,6 +45,14 @@ async def get_cards(game_id, player_token:str) -> List[Card]:
     Played cards will not appear here.
     """
     return app.games[game_id].get_cards(player_token)
+
+@app.get("/{game_id}/event")
+async def get_events(game_id, from_event_id:int=0) -> List[Event]:
+    """
+    Get all events in this game in chronological order.
+    If provides, only events after the provided event id are returned.
+    """
+    return app.games[game_id].get_events(from_event_id)
 
 @app.post("/{game_id}/event")
 def new_event(game_id, player_token:str, event:Event) -> bool:
