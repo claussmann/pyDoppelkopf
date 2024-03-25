@@ -105,6 +105,7 @@ class Absage(Enum):
 class ServerMsg(Enum):
     GAME_MODE = "GAME_MODE"
     WAIT_ANSAGE = "WAIT_ANSAGE"
+    CHAT = "CHAT"
 
 
 class Event(BaseModel):
