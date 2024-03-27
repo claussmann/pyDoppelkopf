@@ -1,0 +1,7 @@
+version: "3"
+services:
+  doppelkopf_api:
+    build: .
+    container_name: doko_api
+    ports:
+      - "8000:8000"
