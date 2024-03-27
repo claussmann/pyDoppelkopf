@@ -11,6 +11,7 @@ class Game():
         self.players = dict()
         self.players_order = list()
         self.starter = 0
+        self.round_cnt = 1
         self.active_round = None
 
     def join(self, name):
@@ -38,6 +39,10 @@ class Game():
 
     def new_event(self, token, event) -> bool:
         if self.active_round != None:
-            # TODO: Validate Player token.
-            return self.active_round.new_event(event)
+            if token in self.players:
+                if self.players[token] == event.player_name:
+                    return self.active_round.new_event(event)
         return False
+
+    def get_game_info(self) -> GameInfo:
+        return GameInfo(round_counter=self.round_cnt, players=self.players_order.copy())
