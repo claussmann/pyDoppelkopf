@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+    <body>
+
+        <div id="create" style="display: block;">
+            <button onclick="javascript:create_new_game()">Create new Game</button>
+            <button onclick="javascript:switch_view('JOIN')">Join existing Game</button>
+        </div>
+        <div id="login" style="display: none;">
+            <input type="text" id="gid_field" placeholder="Game ID">
+            <input type="text" id="pname" placeholder="Player Name">
+            <button onclick="javascript:login_to_game(gid_field.value, pname.value)">Join</button>
+        </div>
+        <div id="play" style="display: none;">
+            You joined the game.
+        </div>
+
+    </body>
+    <script>
+        const HOST = "localhost:8000"
+        var PLAYER_TOKEN = "";
+        var GAME_ID = ""
+
+        function switch_view(view){
+            if(view === "CREATE"){
+                document.getElementById("create").style.display = "block";
+                document.getElementById("login").style.display = "none";
+                document.getElementById("play").style.display = "none";
+            }
+            if(view === "JOIN"){
+                document.getElementById("create").style.display = "none";
+                document.getElementById("login").style.display = "block";
+                document.getElementById("play").style.display = "none";
+            }
+            if(view === "PLAY"){
+                document.getElementById("create").style.display = "none";
+                document.getElementById("login").style.display = "none";
+                document.getElementById("play").style.display = "block";
+            }
+        }
+
+        async function create_new_game() {
+            var url = "http://" + HOST + "/new_game";
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json",},
+                cache: "no-cache",
+            });
+            if(response.status != 200){
+                alert("Something went wrong.");
+                return;
+            }
+            var game_obj = await response.json();
+            gid = game_obj.game_id;
+            console.log("INFO: Game ID is " + gid)
+            document.getElementById("gid_field").value = gid;
+            switch_view("JOIN");
+        }
+
+        async function login_to_game(game_id, player_name) {
+            var url = "http://" + HOST + "/" + game_id + "/join?player_name=" + player_name;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json",},
+                cache: "no-cache",
+            });
+            if(response.status != 200){
+                if(response.status == 422){
+                    alert("The name you provided might not match the criteria.");
+                } else{
+                    alert("Something went wrong.");
+                }
+                console.log(response);
+                return;
+            }
+            var token_obj = await response.json();
+            PLAYER_TOKEN = token_obj.token;
+            GAME_ID = game_id
+            console.log("INFO: Your token is " + PLAYER_TOKEN);
+            switch_view("PLAY")
+        }
+
+    </script>
+</html>

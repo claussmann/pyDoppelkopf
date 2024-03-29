@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from doppelkopf_server.game import Game
 from doppelkopf_server.schemas import *
@@ -7,18 +8,28 @@ import secrets
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.games = dict()
 
 
 @app.post("/new_game")
-def new_game() -> str:
+def new_game() -> GameInfo:
     """
     Creates a new game where players can join.
     The game is reachable by the game id returned on a successful call.
     """
     gid = str(secrets.token_hex(6))
     app.games[gid] = Game()
-    return gid
+    ret = app.games[gid].get_game_info()
+    ret.game_id = gid
+    return ret
 
 @app.get("/{game_id}")
 async def get_game_info(game_id) -> GameInfo:
@@ -30,7 +41,7 @@ async def get_game_info(game_id) -> GameInfo:
     return ret
 
 @app.post("/{game_id}/join")
-def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\-\_]*$")]) -> str:
+def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\-\_]*$")]) -> PlayerPrivate:
     """
     Join the game with provided game id as player with the provided name.
     A player authentication token is returned, which is needed to perform

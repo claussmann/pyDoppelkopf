@@ -2,6 +2,9 @@ from pydantic import BaseModel, Field, model_validator
 from enum import Enum
 from typing import List
 
+class PlayerPrivate(BaseModel):
+    player_name: str
+    token: str
 
 class EventType(Enum):
     VORBEHALT = "VORBEHALT"

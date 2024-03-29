@@ -24,7 +24,7 @@ class Game():
                 self.players_order.append(name)
                 if len(self.players) == 4:
                     self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3])
-                return token
+                return PlayerPrivate(token=token, player_name=name)
             raise Exception("Game already full.")
 
     def get_events(self, from_event_id) -> List[Event]:
