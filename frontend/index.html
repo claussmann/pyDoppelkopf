@@ -11,16 +11,27 @@
             <button onclick="javascript:login_to_game(gid_field.value, pname.value)">Join</button>
         </div>
         <div id="play" style="display: none;">
-            You joined the game.
+            <p>
+                Game ID: <span id="display_game_id"></span>.
+                Status: <span id="display_game_status"></span>.
+            </p>
+            <p>
+                Left: <span id="player_left"></span><br>
+                Front: <span id="player_front"></span><br>
+                Right: <span id="player_right"></span><br>
+                Self: <span id="player_self"></span><br>
+            </p>
         </div>
 
     </body>
     <script>
         const HOST = "localhost:8000"
         var PLAYER_TOKEN = "";
+        var PLAYER_NAME = "";
         var GAME_ID = "";
         var EVENT_ID = 0;
         var PERIODIC_CALL = 0;
+        var TABLE = [];
 
         function switch_view(view){
             if(view === "CREATE"){
@@ -76,8 +87,10 @@
             }
             var token_obj = await response.json();
             PLAYER_TOKEN = token_obj.token;
+            PLAYER_NAME = token_obj.player_name;
             GAME_ID = game_id
             console.log("INFO: Your token is " + PLAYER_TOKEN);
+            document.getElementById("display_game_id").textContent=GAME_ID;
             switch_view("PLAY")
             PERIODIC_CALL = setInterval(process_events, 5000);
         }
@@ -98,7 +111,25 @@
             event_list.forEach( (e) => {
                 console.log(e);
                 EVENT_ID = e.e_id + 1;
+                switch(e.e_type){
+                    case "SERVER":
+                        switch(e.content){
+                            case "PLAYER_JOINED":
+                                TABLE.push(e.add_data)
+                                update_table();
+                                break;
+                        }
+                        break;
+                }
             })
+        }
+
+        function update_table(){
+            var own_index = TABLE.indexOf(PLAYER_NAME);
+            document.getElementById("player_self").textContent=TABLE[own_index];
+            document.getElementById("player_left").textContent=TABLE[(own_index + 1) % 4];
+            document.getElementById("player_front").textContent=TABLE[(own_index + 2) % 4];
+            document.getElementById("player_right").textContent=TABLE[(own_index + 3) % 4];
         }
 
     </script>
