@@ -11,6 +11,7 @@ class EventType(Enum):
     ABSAGE = "ABSAGE"
     KARTE = "KARTE"
     SERVER = "SERVER"
+    CHAT = "CHAT"
 
 
 class Card(Enum):
@@ -108,25 +109,27 @@ class Absage(Enum):
 class ServerMsg(Enum):
     GAME_MODE = "GAME_MODE"
     WAIT_ANSAGE = "WAIT_ANSAGE"
-    CHAT = "CHAT"
+    WAIT_PLAYERS = "WAIT_PLAYERS"
+    PLAYER_JOINED = "PLAYER_JOINED"
+    GAME_STARTED = "GAME_STARTED"
 
 
 class Event(BaseModel):
-    event_id: int = Field(default=None, example="42", description="Automatically set by server.")
-    player_name: str = Field(max_length=20, min_length=2, example="Herbert")
-    event_type: EventType = Field(frozen=True, example="KARTE")
+    e_id: int = Field(default=None, example="42", description="Automatically set by server.")
+    sender: str = Field(max_length=20, min_length=2, example="Herbert")
+    e_type: EventType = Field(frozen=True, example="KARTE")
     content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True, example="H10")
-    additional_data: str = Field(default=None, example="", description="Required for a few events, such as chat messages.")
+    add_data: str = Field(default=None, example="", description="Required for a few events, such as chat messages.")
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
-        if self.event_type == EventType.KARTE and type(self.content) != Card:
+        if self.e_type == EventType.KARTE and type(self.content) != Card:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.ABSAGE and type(self.content) != Absage:
+        if self.e_type == EventType.ABSAGE and type(self.content) != Absage:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
+        if self.e_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.SERVER and type(self.content) != ServerMsg:
+        if self.e_type == EventType.SERVER and type(self.content) != ServerMsg:
             raise ValueError('event type and content do not match')
         return self
 
