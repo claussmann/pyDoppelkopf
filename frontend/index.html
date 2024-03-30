@@ -21,6 +21,20 @@
                 Right: <span id="player_right"></span><br>
                 Self: <span id="player_self"></span><br>
             </p>
+            <p>
+                <span id="card_0"></span>
+                <span id="card_1"></span>
+                <span id="card_2"></span>
+                <span id="card_3"></span>
+                <span id="card_4"></span>
+                <span id="card_5"></span>
+                <span id="card_6"></span>
+                <span id="card_7"></span>
+                <span id="card_8"></span>
+                <span id="card_9"></span>
+                <span id="card_10"></span>
+                <span id="card_11"></span>
+            </p>
         </div>
 
     </body>
@@ -118,6 +132,9 @@
                                 TABLE.push(e.add_data)
                                 update_table();
                                 break;
+                            case "GAME_STARTED":
+                                update_own_cards();
+                                break;
                         }
                         break;
                 }
@@ -130,6 +147,27 @@
             document.getElementById("player_left").textContent=TABLE[(own_index + 1) % 4];
             document.getElementById("player_front").textContent=TABLE[(own_index + 2) % 4];
             document.getElementById("player_right").textContent=TABLE[(own_index + 3) % 4];
+        }
+
+        async function update_own_cards(){
+            var url = "http://" + HOST + "/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN;
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {"Content-Type": "application/json",},
+                cache: "no-cache",
+            });
+            if(response.status != 200){
+                alert("Something went wrong when updating cards.");
+                console.log(response);
+                return;
+            }
+            card_list = await response.json();
+            for(i = 0; i < card_list.length; i++){
+                document.getElementById("card_"+i).textContent=card_list[i];
+            }
+            for(i = card_list.length; i < 12; i++){
+                document.getElementById("card_"+i).textContent="";
+            }
         }
 
     </script>
