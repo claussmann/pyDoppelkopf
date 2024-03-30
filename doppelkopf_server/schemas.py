@@ -115,11 +115,11 @@ class ServerMsg(Enum):
 
 
 class Event(BaseModel):
-    e_id: int = Field(default=None, example="42", description="Automatically set by server.")
-    sender: str = Field(max_length=20, min_length=2, example="Herbert")
-    e_type: EventType = Field(frozen=True, example="KARTE")
-    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True, example="H10")
-    add_data: str = Field(default=None, example="", description="Required for a few events, such as chat messages.")
+    e_id: int = Field(default=None, description="Automatically set by server.")
+    sender: str = Field(max_length=20, min_length=2)
+    e_type: EventType = Field(frozen=True)
+    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True)
+    add_data: str = Field(default=None, description="Required for a few events, such as chat messages.")
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
@@ -134,6 +134,6 @@ class Event(BaseModel):
         return self
 
 class GameInfo(BaseModel):
-    game_id: str = Field(default=None, example="fa4232", description="Game ID")
-    round_counter: int = Field(example="3", description="The current round number (starting at 1)")
-    players: List[str] = Field(example="[Herbert, Trudi, Werner, Doris]", description="Players in this game in game logical order.")
+    game_id: str = Field(default=None, description="Game ID")
+    round_counter: int = Field(description="The current round number (starting at 1)")
+    players: List[str] = Field(description="Players in this game in game logical order.")
