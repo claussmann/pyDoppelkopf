@@ -18,7 +18,9 @@
     <script>
         const HOST = "localhost:8000"
         var PLAYER_TOKEN = "";
-        var GAME_ID = ""
+        var GAME_ID = "";
+        var EVENT_ID = 0;
+        var PERIODIC_CALL = 0;
 
         function switch_view(view){
             if(view === "CREATE"){
@@ -77,6 +79,26 @@
             GAME_ID = game_id
             console.log("INFO: Your token is " + PLAYER_TOKEN);
             switch_view("PLAY")
+            PERIODIC_CALL = setInterval(process_events, 5000);
+        }
+
+        async function process_events() {
+            var url = "http://" + HOST + "/" + GAME_ID + "/event?from_event_id=" + EVENT_ID;
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {"Content-Type": "application/json",},
+                cache: "no-cache",
+            });
+            if(response.status != 200){
+                alert("Something went wrong.");
+                console.log(response);
+                return;
+            }
+            var event_list = await response.json();
+            event_list.forEach( (e) => {
+                console.log(e);
+                EVENT_ID = e.e_id + 1;
+            })
         }
 
     </script>
