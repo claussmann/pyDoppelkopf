@@ -30,7 +30,7 @@ class Game():
                 if len(self.players) == 4:
                     self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3], self.starter)
                     self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.GAME_STARTED))
-                    self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.WAIT_ANSAGE, add_data=str(self.starter)))
+                    self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.WAIT_VORBEHALT, add_data=str(self.starter)))
                 return PlayerPrivate(token=token, player_name=name)
             raise Exception("Game already full.")
 

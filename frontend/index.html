@@ -13,7 +13,7 @@
         <div id="play" style="display: none;">
             <p>
                 Game ID: <span id="display_game_id"></span>.
-                Status: <span id="display_game_status"></span>.
+                Game mode: <span id="display_game_mode"></span>.
             </p>
             <p>
                 Left: <span id="player_left"></span><br>
@@ -35,6 +35,12 @@
                 <button onclick="javascript:lay_card(10)" id="card_10">--</button>
                 <button onclick="javascript:lay_card(11)" id="card_11">--</button>
             </p>
+            <div id="vorbehalt" style="display: none;">
+                <button onclick="javascript:vorbehalt('GESUND')" id="vorbehalt_GESUND">Gesund</button>
+            </div>
+            <div id="absage" style="display: none;">
+                <button>Re</button>
+            </div>
         </div>
 
     </body>
@@ -133,6 +139,19 @@
                             case "GAME_STARTED":
                                 update_own_cards();
                                 break;
+                            case "WAIT_VORBEHALT":
+                                document.getElementById("vorbehalt").style.display = "block";
+                                document.getElementById("absage").style.display = "none";
+                                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true)
+                                document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false)
+                                break;
+                            case "GAMEMODE":
+                                document.getElementById("vorbehalt").style.display = "none";
+                                document.getElementById("absage").style.display = "block";
+                                GAMEMODE = e.add_data;
+                                document.getElementById("display_game_mode").textContent=GAMEMODE;
+                                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false)
+                                break;
                         }
                         break;
                 }
@@ -189,6 +208,19 @@
             }
         }
 
+        function vorbehalt(vorbehalt) {
+            var event = {
+                "sender": PLAYER_NAME,
+                "e_type": "VORBEHALT",
+                "content": vorbehalt,
+            }
+            if(send_event(event)){
+                document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
+            } else {
+                console.log("Vorbehalt is not allowed.");
+            }
+        }
+
         async function send_event(event) {
             var url = "http://" + HOST + "/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
             const response = await fetch(url, {
@@ -214,9 +246,7 @@
                     "DA", "D10", "DK", "D9", "CA", "C10", "CK", "C9", "SA", "S10", "SK", "S9", "HA", "HK", "H9",
                 ]
             }
-            console.log(ranking)
             HAND_CARDS.sort((a, b) => ranking.indexOf(a) - ranking.indexOf(b));
-            console.log(HAND_CARDS);
         }
 
     </script>
