@@ -6,6 +6,9 @@ class PlayerPrivate(BaseModel):
     player_name: str
     token: str
 
+class EventResponse(BaseModel):
+    successful: bool
+
 class EventType(Enum):
     VORBEHALT = "VORBEHALT"
     ABSAGE = "ABSAGE"
@@ -15,10 +18,14 @@ class EventType(Enum):
 
 
 class Card(Enum):
+    # Special
+    SCHWEIN = "SCHWEIN"
+    SUPERSCHWEIN = "SUPERSCHWEIN"
+
     # Diamonds
     D9 = "D9"
     DJ = "DJ"
-    DD = "DD"
+    DQ = "DQ"
     DK = "DK"
     D10 = "D10"
     DA = "DA"
@@ -26,7 +33,7 @@ class Card(Enum):
     # Heart
     H9 = "H9"
     HJ = "HJ"
-    HD = "HD"
+    HQ = "HQ"
     HK = "HK"
     H10 = "H10"
     HA = "HA"
@@ -34,7 +41,7 @@ class Card(Enum):
     # Spades
     S9 = "S9"
     SJ = "SJ"
-    SD = "SD"
+    SQ = "SQ"
     SK = "SK"
     S10 = "S10"
     SA = "SA"
@@ -42,7 +49,7 @@ class Card(Enum):
     # Clubs
     C9 = "C9"
     CJ = "CJ"
-    CD = "CD"
+    CQ = "CQ"
     CK = "CK"
     C10 = "C10"
     CA = "CA"

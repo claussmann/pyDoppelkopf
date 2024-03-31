@@ -66,9 +66,10 @@ async def get_events(game_id, from_event_id:int=0) -> List[Event]:
     return app.games[game_id].get_events(from_event_id)
 
 @app.post("/{game_id}/event")
-def new_event(game_id, player_token:str, event:Event) -> bool:
+def new_event(game_id, player_token:str, event:Event) -> EventResponse:
     """
     Send a new event.
     The event will be validated, i.e. it is checked whether the action is legal.
     """
-    return app.games[game_id].new_event(player_token, event)
+    ret = app.games[game_id].new_event(player_token, event)
+    return EventResponse(successful=ret)

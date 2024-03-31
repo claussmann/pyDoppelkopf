@@ -10,13 +10,13 @@ class Runde:
     def __init__(self, player_name_1: str, player_name_2: str, player_name_3: str, player_name_4: str, starter: int):
         self.mutex = Lock()
         self.card_deck = [
-            Card.D9, Card.D9, Card.DJ, Card.DJ, Card.DD, Card.DD,
+            Card.D9, Card.D9, Card.DJ, Card.DJ, Card.DQ, Card.DQ,
             Card.DK, Card.DK, Card.D10, Card.D10, Card.DA, Card.DA,
-            Card.H9, Card.H9, Card.HJ, Card.HJ, Card.HD, Card.HD,
+            Card.H9, Card.H9, Card.HJ, Card.HJ, Card.HQ, Card.HQ,
             Card.HK, Card.HK, Card.H10, Card.H10, Card.HA, Card.HA,
-            Card.S9, Card.S9, Card.SJ, Card.SJ, Card.SD, Card.SD,
+            Card.S9, Card.S9, Card.SJ, Card.SJ, Card.SQ, Card.SQ,
             Card.SK, Card.SK, Card.S10, Card.S10, Card.SA, Card.SA,
-            Card.C9, Card.C9, Card.CJ, Card.CJ, Card.CD, Card.CD,
+            Card.C9, Card.C9, Card.CJ, Card.CJ, Card.CQ, Card.CQ,
             Card.CK, Card.CK, Card.C10, Card.C10, Card.CA, Card.CA
         ]
         random.shuffle(self.card_deck)

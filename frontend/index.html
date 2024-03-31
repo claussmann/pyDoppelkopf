@@ -22,18 +22,18 @@
                 Self: <span id="player_self"></span><br>
             </p>
             <p>
-                <span id="card_0"></span>
-                <span id="card_1"></span>
-                <span id="card_2"></span>
-                <span id="card_3"></span>
-                <span id="card_4"></span>
-                <span id="card_5"></span>
-                <span id="card_6"></span>
-                <span id="card_7"></span>
-                <span id="card_8"></span>
-                <span id="card_9"></span>
-                <span id="card_10"></span>
-                <span id="card_11"></span>
+                <button onclick="javascript:lay_card(0)" id="card_0">--</button>
+                <button onclick="javascript:lay_card(1)" id="card_1">--</button>
+                <button onclick="javascript:lay_card(2)" id="card_2">--</button>
+                <button onclick="javascript:lay_card(3)" id="card_3">--</button>
+                <button onclick="javascript:lay_card(4)" id="card_4">--</button>
+                <button onclick="javascript:lay_card(5)" id="card_5">--</button>
+                <button onclick="javascript:lay_card(6)" id="card_6">--</button>
+                <button onclick="javascript:lay_card(7)" id="card_7">--</button>
+                <button onclick="javascript:lay_card(8)" id="card_8">--</button>
+                <button onclick="javascript:lay_card(9)" id="card_9">--</button>
+                <button onclick="javascript:lay_card(10)" id="card_10">--</button>
+                <button onclick="javascript:lay_card(11)" id="card_11">--</button>
             </p>
         </div>
 
@@ -46,6 +46,8 @@
         var EVENT_ID = 0;
         var PERIODIC_CALL = 0;
         var TABLE = [];
+        var HAND_CARDS = [];
+        var GAMEMODE = "GESUND";
 
         function switch_view(view){
             if(view === "CREATE"){
@@ -73,7 +75,7 @@
                 cache: "no-cache",
             });
             if(response.status != 200){
-                alert("Something went wrong.");
+                alert("Error (ID: 1)");
                 return;
             }
             var game_obj = await response.json();
@@ -91,11 +93,7 @@
                 cache: "no-cache",
             });
             if(response.status != 200){
-                if(response.status == 422){
-                    alert("The name you provided might not match the criteria.");
-                } else{
-                    alert("Something went wrong.");
-                }
+                alert("Error (ID: 2)");
                 console.log(response);
                 return;
             }
@@ -117,7 +115,7 @@
                 cache: "no-cache",
             });
             if(response.status != 200){
-                alert("Something went wrong.");
+                alert("Error (ID: 3)");
                 console.log(response);
                 return;
             }
@@ -157,17 +155,68 @@
                 cache: "no-cache",
             });
             if(response.status != 200){
-                alert("Something went wrong when updating cards.");
+                alert("Error (ID: 4)");
                 console.log(response);
                 return;
             }
-            card_list = await response.json();
-            for(i = 0; i < card_list.length; i++){
-                document.getElementById("card_"+i).textContent=card_list[i];
+            HAND_CARDS = await response.json();
+            sort_cards();
+            console.log(HAND_CARDS);
+            for(i = 0; i < HAND_CARDS.length; i++){
+                document.getElementById("card_"+i).textContent=HAND_CARDS[i];
             }
-            for(i = card_list.length; i < 12; i++){
-                document.getElementById("card_"+i).textContent="";
+            for(i = HAND_CARDS.length; i < 12; i++){
+                document.getElementById("card_"+i).textContent="--";
             }
+        }
+
+        function lay_card(card_slot) {
+            var event = {
+                "sender": PLAYER_NAME,
+                "e_type": "KARTE",
+                "content": HAND_CARDS[card_slot],
+            }
+            if(send_event(event)){
+                HAND_CARDS.splice(card_slot, 1);
+                for(i = 0; i < HAND_CARDS.length; i++){
+                    document.getElementById("card_"+i).textContent=HAND_CARDS[i];
+                }
+                for(i = HAND_CARDS.length; i < 12; i++){
+                    document.getElementById("card_"+i).textContent="--";
+                }
+            } else {
+                console.log("Card is not allowed.");
+            }
+        }
+
+        async function send_event(event) {
+            var url = "http://" + HOST + "/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json",},
+                cache: "no-cache",
+                body: JSON.stringify(event),
+            });
+            if(response.status != 200){
+                alert("Error (ID: 5)");
+                console.log(response);
+                return false;
+            }
+            var event_resp = await response.json();
+            return event_resp.successful;
+        }
+
+        function sort_cards(){
+            ranking = [];
+            if(GAMEMODE == "GESUND"){
+                ranking = [
+                    "SUPERSCHWEIN", "SCHWEIN", "H10", "CQ", "SQ", "HQ", "DQ", "CJ", "SJ", "HJ", "DJ",
+                    "DA", "D10", "DK", "D9", "CA", "C10", "CK", "C9", "SA", "S10", "SK", "S9", "HA", "HK", "H9",
+                ]
+            }
+            console.log(ranking)
+            HAND_CARDS.sort((a, b) => ranking.indexOf(a) - ranking.indexOf(b));
+            console.log(HAND_CARDS);
         }
 
     </script>
