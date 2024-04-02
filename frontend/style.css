@@ -1,0 +1,56 @@
+html, body {
+    margin: 0;
+    padding: 0;
+	scroll-behavior: smooth;
+    background-color: #f0dfff;
+}
+
+body {
+    font: 100% Roboto, Arial, sans-serif;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+input[type=text]{
+    padding: 7px 10px;
+    margin: 5px 2px;
+    display: inline-block;
+    border: 1px solid #868686;
+    border-radius: 6px;
+}
+
+.std_btn {
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    padding: 7px 10px;
+    margin: 5px 2px;
+}
+
+.card {
+    background-color: #f4efff;
+    color: black;
+    border: 2px solid #0f0f0f;
+    border-radius: 4px;
+    font-size: 20px;
+    padding: 30px 20px;
+}
+
+.table_card {
+    background-color: #bbbbbb;
+    color: black;
+    border: 2px solid #0f0f0f;
+    border-radius: 4px;
+    font-size: 20px;
+    padding: 24px 16px;
+}
+
+.table {
+    margin-left: auto;
+    margin-right: auto;
+}

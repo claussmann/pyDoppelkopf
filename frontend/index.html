@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<!-- Head -->
+    <head>
+        <title>pyTeamQuiz</title>
+        <meta charset="utf-8">
+        <link href="style.css" rel="stylesheet">
+        <link href="favicon.png" rel="icon">
+        <script src="main.js"></script>
+    </head>
+
+
+<!-- Body -->
+    <body>
+        <div class="title_bar">
+            Game ID: <span id="display_game_id"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+            Game mode: <span id="display_game_mode"></span>
+        </div>
+
+        <div class="center">
+            <div id="create" style="display: block;">
+                <button class="std_btn" onclick="javascript:create_new_game()">Create new Game</button>
+                <button class="std_btn" onclick="javascript:switch_view('JOIN')">Join existing Game</button>
+            </div>
+            <div id="login" style="display: none;">
+                <input type="text" id="gid_field" placeholder="Game ID">
+                <input type="text" id="pname" placeholder="Player Name">
+                <button class="std_btn" onclick="javascript:login_to_game(gid_field.value, pname.value)">Join</button>
+            </div>
+            <div id="play" style="display: none;">
+                <table class="table">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><span id="player_front">--</span></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><button class="std_btn table_card" id="card_player_front" disabled>--</button></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><span id="player_left">--</span></td>
+                        <td><button class="std_btn table_card" id="card_player_left" disabled>--</button></td>
+                        <td></td>
+                        <td><button class="std_btn table_card" id="card_player_right" disabled>--</button></td>
+                        <td><span id="player_right">--</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><button class="std_btn table_card" id="card_player_self" disabled>--</button></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><span id="player_self">--</span></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </table>
+                <p>
+                    <button class="std_btn card" onclick="javascript:lay_card(0)" id="card_0">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(1)" id="card_1">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(2)" id="card_2">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(3)" id="card_3">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(4)" id="card_4">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(5)" id="card_5">--</button>
+                    <br>
+                    <button class="std_btn card" onclick="javascript:lay_card(6)" id="card_6">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(7)" id="card_7">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(8)" id="card_8">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(9)" id="card_9">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(10)" id="card_10">--</button>
+                    <button class="std_btn card" onclick="javascript:lay_card(11)" id="card_11">--</button>
+                </p>
+                <div id="vorbehalt" style="display: none;">
+                    <button class="std_btn" onclick="javascript:vorbehalt('GESUND')" id="vorbehalt_GESUND">Gesund</button>
+                </div>
+                <div id="absage" style="display: none;">
+                    <button class="std_btn">Re</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

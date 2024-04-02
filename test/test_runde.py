@@ -3,7 +3,7 @@ from doppelkopf_server.runde import *
 from doppelkopf_server.schemas import *
 
 def test_card_shuffle():
-    runde = Runde("Albert", "Bernd", "Fred", "Anne")
+    runde = Runde("Albert", "Bernd", "Fred", "Anne", 0)
     albert = runde.get_hand("Albert")
     bernd = runde.get_hand("Bernd")
     fred = runde.get_hand("Fred")

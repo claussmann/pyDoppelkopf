@@ -2,19 +2,30 @@ from pydantic import BaseModel, Field, model_validator
 from enum import Enum
 from typing import List
 
+class PlayerPrivate(BaseModel):
+    player_name: str
+    token: str
+
+class EventResponse(BaseModel):
+    successful: bool
 
 class EventType(Enum):
     VORBEHALT = "VORBEHALT"
     ABSAGE = "ABSAGE"
     KARTE = "KARTE"
     SERVER = "SERVER"
+    CHAT = "CHAT"
 
 
 class Card(Enum):
+    # Special
+    SCHWEIN = "SCHWEIN"
+    SUPERSCHWEIN = "SUPERSCHWEIN"
+
     # Diamonds
     D9 = "D9"
     DJ = "DJ"
-    DD = "DD"
+    DQ = "DQ"
     DK = "DK"
     D10 = "D10"
     DA = "DA"
@@ -22,7 +33,7 @@ class Card(Enum):
     # Heart
     H9 = "H9"
     HJ = "HJ"
-    HD = "HD"
+    HQ = "HQ"
     HK = "HK"
     H10 = "H10"
     HA = "HA"
@@ -30,7 +41,7 @@ class Card(Enum):
     # Spades
     S9 = "S9"
     SJ = "SJ"
-    SD = "SD"
+    SQ = "SQ"
     SK = "SK"
     S10 = "S10"
     SA = "SA"
@@ -38,7 +49,7 @@ class Card(Enum):
     # Clubs
     C9 = "C9"
     CJ = "CJ"
-    CD = "CD"
+    CQ = "CQ"
     CK = "CK"
     C10 = "C10"
     CA = "CA"
@@ -83,7 +94,7 @@ class Vorbehalt(Enum):
     DAMENSOLO = "DAMENSOLO"
     FARBSOLO_DIAMOND = "FARBSOLO_DIAMOND"
     FARBSOLO_HEART = "FARBSOLO_HEART"
-    FARBSOLO_CROSS = "FARBSOLO_CROSS"
+    FARBSOLO_CLUBS = "FARBSOLO_CLUBS"
     FARBSOLO_SPADES = "FARBSOLO_SPADES"
 
     def is_solo(self):
@@ -104,30 +115,32 @@ class Absage(Enum):
 
 class ServerMsg(Enum):
     GAME_MODE = "GAME_MODE"
-    WAIT_ANSAGE = "WAIT_ANSAGE"
-    CHAT = "CHAT"
+    WAIT_VORBEHALT = "WAIT_VORBEHALT"
+    WAIT_PLAYERS = "WAIT_PLAYERS"
+    PLAYER_JOINED = "PLAYER_JOINED"
+    GAME_STARTED = "GAME_STARTED"
 
 
 class Event(BaseModel):
-    event_id: int = Field(default=None, example="42", description="Automatically set by server.")
-    player_name: str = Field(max_length=20, min_length=2, example="Herbert")
-    event_type: EventType = Field(frozen=True, example="KARTE")
-    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True, example="H10")
-    additional_data: str = Field(default=None, example="", description="Required for a few events, such as chat messages.")
+    e_id: int = Field(default=None, description="Automatically set by server.")
+    sender: str = Field(max_length=20, min_length=2)
+    e_type: EventType = Field(frozen=True)
+    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True)
+    add_data: str = Field(default=None, description="Required for a few events, such as chat messages.")
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
-        if self.event_type == EventType.KARTE and type(self.content) != Card:
+        if self.e_type == EventType.KARTE and type(self.content) != Card:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.ABSAGE and type(self.content) != Absage:
+        if self.e_type == EventType.ABSAGE and type(self.content) != Absage:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
+        if self.e_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
             raise ValueError('event type and content do not match')
-        if self.event_type == EventType.SERVER and type(self.content) != ServerMsg:
+        if self.e_type == EventType.SERVER and type(self.content) != ServerMsg:
             raise ValueError('event type and content do not match')
         return self
 
 class GameInfo(BaseModel):
-    game_id: str = Field(default=None, example="fa4232", description="Game ID")
-    round_counter: int = Field(example="3", description="The current round number (starting at 1)")
-    players: List[str] = Field(example="[Herbert, Trudi, Werner, Doris]", description="Players in this game in game logical order.")
+    game_id: str = Field(default=None, description="Game ID")
+    round_counter: int = Field(description="The current round number (starting at 1)")
+    players: List[str] = Field(description="Players in this game in game logical order.")
