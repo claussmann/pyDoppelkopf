@@ -97,7 +97,8 @@
         var GAME_ID = "";
         var EVENT_ID = 0;
         var PERIODIC_CALL = 0;
-        var TABLE = ["(missing)", "(missing)", "(missing)", "(missing)"];
+        var TABLE_PLAYERS = [];
+        var TABLE_CARDS = {};
         var HAND_CARDS = [];
         var GAMEMODE = "GESUND";
 
@@ -156,7 +157,7 @@
             console.log("INFO: Your token is " + PLAYER_TOKEN);
             document.getElementById("display_game_id").textContent=GAME_ID;
             switch_view("PLAY")
-            PERIODIC_CALL = setInterval(process_events, 5000);
+            PERIODIC_CALL = setInterval(process_events, 3000);
         }
 
         async function process_events() {
@@ -176,10 +177,16 @@
                 console.log(e);
                 EVENT_ID = e.e_id + 1;
                 switch(e.e_type){
+                    case "KARTE":
+                        TABLE_CARDS[e.sender] = e.content;
+                        update_table();
+                        break;
                     case "SERVER":
                         switch(e.content){
                             case "PLAYER_JOINED":
-                                TABLE.push(e.add_data)
+                                var joined_name = e.add_data;
+                                TABLE_PLAYERS.push(joined_name);
+                                TABLE_CARDS[joined_name];
                                 update_table();
                                 break;
                             case "GAME_STARTED":
@@ -205,11 +212,19 @@
         }
 
         function update_table(){
-            var own_index = TABLE.indexOf(PLAYER_NAME);
-            document.getElementById("player_self").textContent=TABLE[own_index];
-            document.getElementById("player_left").textContent=TABLE[(own_index + 1) % 4];
-            document.getElementById("player_front").textContent=TABLE[(own_index + 2) % 4];
-            document.getElementById("player_right").textContent=TABLE[(own_index + 3) % 4];
+            var own_index = TABLE_PLAYERS.indexOf(PLAYER_NAME);
+            var own_name = TABLE_PLAYERS[own_index];
+            var left_name = TABLE_PLAYERS[(own_index + 1) % 4];
+            var front_name = TABLE_PLAYERS[(own_index + 2) % 4];
+            var right_name = TABLE_PLAYERS[(own_index + 3) % 4];
+            document.getElementById("player_self").textContent=own_name;
+            document.getElementById("player_left").textContent=left_name;
+            document.getElementById("player_front").textContent=front_name;
+            document.getElementById("player_right").textContent=right_name;
+            document.getElementById("card_player_self").textContent=TABLE_CARDS[own_name];
+            document.getElementById("card_player_left").textContent=TABLE_CARDS[left_name];
+            document.getElementById("card_player_front").textContent=TABLE_CARDS[front_name];
+            document.getElementById("card_player_right").textContent=TABLE_CARDS[right_name];
         }
 
         async function update_own_cards(){
@@ -235,13 +250,14 @@
             }
         }
 
-        function lay_card(card_slot) {
+        async function lay_card(card_slot) {
+            var card_content = HAND_CARDS[card_slot];
             var event = {
                 "sender": PLAYER_NAME,
                 "e_type": "KARTE",
-                "content": HAND_CARDS[card_slot],
+                "content": card_content,
             }
-            if(send_event(event)){
+            if(await send_event(event)){
                 HAND_CARDS.splice(card_slot, 1);
                 for(i = 0; i < HAND_CARDS.length; i++){
                     document.getElementById("card_"+i).textContent=HAND_CARDS[i];
@@ -249,18 +265,19 @@
                 for(i = HAND_CARDS.length; i < 12; i++){
                     document.getElementById("card_"+i).textContent="--";
                 }
+                document.getElementById("card_player_self").textContent=card_content;
             } else {
                 console.log("Card is not allowed.");
             }
         }
 
-        function vorbehalt(vorbehalt) {
+        async function vorbehalt(vorbehalt) {
             var event = {
                 "sender": PLAYER_NAME,
                 "e_type": "VORBEHALT",
                 "content": vorbehalt,
             }
-            if(send_event(event)){
+            if(await send_event(event)){
                 document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
             } else {
                 console.log("Vorbehalt is not allowed.");
