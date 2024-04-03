@@ -10,6 +10,8 @@ class Game():
         self.mutex = Lock()
         self.players = dict()
         self.players_order = list()
+        self.players_points = dict()
+        self.players_solos = dict()
         self.starter = 0
         self.round_cnt = 1
         self.active_round = None
@@ -25,12 +27,12 @@ class Game():
                 token = name + str(secrets.token_hex(10))
                 self.players[token] = name
                 self.players_order.append(name)
+                self.players_points[name] = 0
+                self.players_solos[name] = 0
                 self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER,
                                 content=ServerMsg.PLAYER_JOINED, add_data=name))
                 if len(self.players) == 4:
-                    self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3], self.starter)
-                    self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.GAME_STARTED))
-                    self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.WAIT_VORBEHALT, add_data=str(self.starter)))
+                    self._new_round()
                 return PlayerPrivate(token=token, player_name=name)
             raise Exception("Game already full.")
 
@@ -55,7 +57,40 @@ class Game():
                             event.e_id = len(self.events)
                             self.events.append(event)
                         return True
+                case EventType.VORBEHALT:
+                    if event.content.is_pflicht_solo() and self.players_solos[event.sender] > 0:
+                        return False # Pflichtsolo can only be played once.
+                    if self.active_round.new_vorbehalt_event(event):
+                        with self.mutex:
+                            event.e_id = len(self.events)
+                            self.events.append(event)
+                            if self.active_round.ready_to_play():
+                                self.events.append(
+                                    Event(e_id=len(self.events),
+                                        sender="Server",
+                                        e_type=EventType.SERVER,
+                                        content=ServerMsg.GAME_MODE, add_data=self.active_round.get_game_mode()
+                                    )
+                                )
+                                self.events.append(
+                                    Event(e_id=len(self.events),
+                                        sender="Server",
+                                        e_type=EventType.SERVER,
+                                        content=ServerMsg.ROUND_STARTED, add_data=self.active_round.get_current_turn_player()
+                                    )
+                                )
+                                if event.content.is_solo():
+                                    self.players_solos[event.sender] += 1
+                        return True
         return False
 
     def get_game_info(self) -> GameInfo:
         return GameInfo(round_counter=self.round_cnt, players=self.players_order.copy())
+
+    def _new_round(self):
+        self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3], self.starter)
+        self.events.append(Event(e_id=len(self.events), sender="Server",
+                            e_type=EventType.SERVER, content=ServerMsg.GAME_STARTED))
+        self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER,
+                            content=ServerMsg.WAIT_VORBEHALT, add_data=self.active_round.get_current_turn_player()))
+        self.starter = (self.starter + 1) % 4

@@ -88,6 +88,8 @@ class Vorbehalt(Enum):
     GESUND = "GESUND"
     HOCHZEIT = "HOCHZEIT"
     ARMUT = "ARMUT"
+    SCHMEISSEN = "SCHMEISSEN"
+    #
     SOLO = "SOLO"
     FLEISCHLOSER = "FLEISCHLOSER"
     BUBENSOLO = "BUBENSOLO"
@@ -96,16 +98,42 @@ class Vorbehalt(Enum):
     FARBSOLO_HEART = "FARBSOLO_HEART"
     FARBSOLO_CLUBS = "FARBSOLO_CLUBS"
     FARBSOLO_SPADES = "FARBSOLO_SPADES"
+    #
+    PFLICHT_SOLO = "PFLICHT_SOLO"
+    PFLICHT_FLEISCHLOSER = "PFLICHT_FLEISCHLOSER"
+    PFLICHT_BUBENSOLO = "PFLICHT_BUBENSOLO"
+    PFLICHT_DAMENSOLO = "PFLICHT_DAMENSOLO"
+    PFLICHT_FARBSOLO_DIAMOND = "PFLICHT_FARBSOLO_DIAMOND"
+    PFLICHT_FARBSOLO_HEART = "PFLICHT_FARBSOLO_HEART"
+    PFLICHT_FARBSOLO_CLUBS = "PFLICHT_FARBSOLO_CLUBS"
+    PFLICHT_FARBSOLO_SPADES = "PFLICHT_FARBSOLO_SPADES"
 
     def is_solo(self):
-        return self in [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER,
-                    Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
+        return self not in [Vorbehalt.GESUND, Vorbehalt.HOCHZEIT, Vorbehalt.ARMUT, Vorbehalt.SCHMEISSEN]
+
+    def is_pflicht_solo(self):
+        return self in [Vorbehalt.PFLICHT_SOLO, Vorbehalt.PFLICHT_FLEISCHLOSER, Vorbehalt.PFLICHT_BUBENSOLO,
+                        Vorbehalt.PFLICHT_DAMENSOLO, Vorbehalt.PFLICHT_FARBSOLO_DIAMOND, Vorbehalt.PFLICHT_FARBSOLO_HEART,
+                        Vorbehalt.PFLICHT_FARBSOLO_CLUBS, Vorbehalt.PFLICHT_FARBSOLO_SPADES]
 
     def has_priority_over(self, other):
-        priority = [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
-        if other not in priority:
+        if other == Vorbehalt.SCHMEISSEN:
+            return False
+        if self.is_pflicht_solo():
             return True
-        return priority.index(self) > priority.index(other)
+        if other.is_pflicht_solo():
+            return False
+        if self.is_solo():
+            return True
+        if other.is_solo():
+            return False
+        if self == Vorbehalt.ARMUT:
+            return True
+        if self == Vorbehalt.HOCHZEIT and other != Vorbehalt.ARMUT:
+            return True
+        if self == Vorbehalt.GESUND and other != Vorbehalt.GESUND:
+            return False
+        return True
 
 
 class Absage(Enum):
@@ -119,6 +147,7 @@ class ServerMsg(Enum):
     WAIT_PLAYERS = "WAIT_PLAYERS"
     PLAYER_JOINED = "PLAYER_JOINED"
     GAME_STARTED = "GAME_STARTED"
+    ROUND_STARTED = "ROUND_STARTED"
 
 
 class Event(BaseModel):
