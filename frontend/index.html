@@ -32,40 +32,40 @@
                     <tr>
                         <td></td>
                         <td></td>
-                        <td><span id="player_front">--</span></td>
+                        <td class="table_cell_name"><span id="player_front" class="table_name">--</span><br/><span id="table_vorbehalt_front" class="table_vorbehalt"></span></td>
                         <td></td>
                         <td></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td></td>
-                        <td><button class="std_btn table_card" id="table_card_front" disabled>--</button></td>
+                        <td class="table_cell_card"><button class="std_btn table_card" id="table_card_front" disabled>--</button></td>
                         <td></td>
                         <td></td>
                     </tr>
                     <tr>
-                        <td><span id="player_left">--</span></td>
-                        <td><button class="std_btn table_card" id="table_card_left" disabled>--</button></td>
+                        <td class="table_cell_name"><span id="player_left" class="table_name">--</span><br/><span id="table_vorbehalt_left" class="table_vorbehalt"></span></td>
+                        <td class="table_cell_card"><button class="std_btn table_card" id="table_card_left" disabled>--</button></td>
                         <td></td>
-                        <td><button class="std_btn table_card" id="table_card_right" disabled>--</button></td>
-                        <td><span id="player_right">--</span></td>
+                        <td class="table_cell_card"><button class="std_btn table_card" id="table_card_right" disabled>--</button></td>
+                        <td class="table_cell_name"><span id="player_right" class="table_name">--</span><br/><span id="table_vorbehalt_right" class="table_vorbehalt"></span></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td></td>
-                        <td><button class="std_btn table_card" id="table_card_self" disabled>--</button></td>
+                        <td class="table_cell_card"><button class="std_btn table_card" id="table_card_self" disabled>--</button></td>
                         <td></td>
                         <td></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td></td>
-                        <td><span id="player_self">--</span></td>
+                        <td class="table_cell_name"><span id="player_self" class="table_name">--</span><br/><span id="table_vorbehalt_self" class="table_vorbehalt"></span></td>
                         <td></td>
                         <td></td>
                     </tr>
                 </table>
-                <p>
+                <div class="own_card_hand">
                     <button class="std_btn card" onclick="javascript:lay_card(0)" id="card_0">--</button>
                     <button class="std_btn card" onclick="javascript:lay_card(1)" id="card_1">--</button>
                     <button class="std_btn card" onclick="javascript:lay_card(2)" id="card_2">--</button>
@@ -79,7 +79,7 @@
                     <button class="std_btn card" onclick="javascript:lay_card(9)" id="card_9">--</button>
                     <button class="std_btn card" onclick="javascript:lay_card(10)" id="card_10">--</button>
                     <button class="std_btn card" onclick="javascript:lay_card(11)" id="card_11">--</button>
-                </p>
+                </div>
                 <div id="vorbehalt" style="display: none;">
                     <button class="std_btn" onclick="javascript:vorbehalt('GESUND')" id="vorbehalt_GESUND">Gesund</button>
                 </div>
