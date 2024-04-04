@@ -96,38 +96,32 @@ async function process_events() {
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
-            case "SERVER":
-                switch(e.content){
-                    case "PLAYER_JOINED":
-                        var joined_name = e.add_data;
-                        TABLE_PLAYERS.push(joined_name);
-                        TABLE_CARDS[joined_name];
-                        update_table();
-                        break;
-                    case "GAME_STARTED":
-                        update_own_cards();
-                        break;
-                    case "WAIT_VORBEHALT":
-                        document.getElementById("vorbehalt").style.display = "block";
-                        document.getElementById("absage").style.display = "none";
-                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
-                        document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
-                        CURRENT_TURN = TABLE_PLAYERS.indexOf(e.add_data);
-                        TABLE_VORBEHALTE = {};
-                        update_table();
-                        break;
-                    case "GAMEMODE":
-                        document.getElementById("vorbehalt").style.display = "none";
-                        document.getElementById("absage").style.display = "block";
-                        GAMEMODE = e.add_data;
-                        document.getElementById("display_game_mode").textContent=GAMEMODE;
-                        break;
-                    case "ROUND_STARTED":
-                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
-                        CURRENT_TURN = TABLE_PLAYERS.indexOf(e.add_data);
-                        update_table();
-                        break;
-                }
+            case "PLAYER_JOINED":
+                var joined_name = e.text_content;
+                TABLE_PLAYERS.push(joined_name);
+                TABLE_CARDS[joined_name];
+                update_table();
+                break;
+            case "WAIT_VORBEHALT":
+                update_own_cards();
+                document.getElementById("vorbehalt").style.display = "block";
+                document.getElementById("absage").style.display = "none";
+                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
+                document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
+                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
+                TABLE_VORBEHALTE = {};
+                update_table();
+                break;
+            case "GAMEMODE":
+                document.getElementById("vorbehalt").style.display = "none";
+                document.getElementById("absage").style.display = "block";
+                GAMEMODE = e.content;
+                document.getElementById("display_game_mode").textContent=GAMEMODE;
+                break;
+            case "ROUND_STARTED":
+                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
+                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
+                update_table();
                 break;
         }
     })

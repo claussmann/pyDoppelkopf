@@ -15,44 +15,29 @@ class EventType(Enum):
     KARTE = "KARTE"
     SERVER = "SERVER"
     CHAT = "CHAT"
+    GAME_MODE = "GAME_MODE"
+    WAIT_VORBEHALT = "WAIT_VORBEHALT"
+    WAIT_PLAYERS = "WAIT_PLAYERS"
+    PLAYER_JOINED = "PLAYER_JOINED"
+    ROUND_STARTED = "ROUND_STARTED"
+    STICH = "STICH"
+
+    def is_server_privilege(self):
+        return self in [EventType.GAME_MODE, EventType.WAIT_VORBEHALT, EventType.WAIT_PLAYERS,
+                    EventType.PLAYER_JOINED, EventType.ROUND_STARTED, EventType.STICH]
 
 
 class Card(Enum):
     # Special
-    SCHWEIN = "SCHWEIN"
-    SUPERSCHWEIN = "SUPERSCHWEIN"
-
+    SCHWEIN = "SCHWEIN"; SUPERSCHWEIN = "SUPERSCHWEIN"
     # Diamonds
-    D9 = "D9"
-    DJ = "DJ"
-    DQ = "DQ"
-    DK = "DK"
-    D10 = "D10"
-    DA = "DA"
-
+    D9 = "D9"; DJ = "DJ"; DQ = "DQ"; DK = "DK"; D10 = "D10"; DA = "DA"
     # Heart
-    H9 = "H9"
-    HJ = "HJ"
-    HQ = "HQ"
-    HK = "HK"
-    H10 = "H10"
-    HA = "HA"
-
+    H9 = "H9"; HJ = "HJ"; HQ = "HQ"; HK = "HK"; H10 = "H10"; HA = "HA"
     # Spades
-    S9 = "S9"
-    SJ = "SJ"
-    SQ = "SQ"
-    SK = "SK"
-    S10 = "S10"
-    SA = "SA"
-
+    S9 = "S9"; SJ = "SJ"; SQ = "SQ"; SK = "SK"; S10 = "S10"; SA = "SA"
     # Clubs
-    C9 = "C9"
-    CJ = "CJ"
-    CQ = "CQ"
-    CK = "CK"
-    C10 = "C10"
-    CA = "CA"
+    C9 = "C9"; CJ = "CJ"; CQ = "CQ"; CK = "CK"; C10 = "C10"; CA = "CA"
 
     def is_diamond(self):
         dia = [Card.D9, Card.DK, Card.DJ, Card.DD, Card.D10, Card.DA]
@@ -141,21 +126,12 @@ class Absage(Enum):
     KONTRA_WINS = "KONTRA_WINS"
 
 
-class ServerMsg(Enum):
-    GAME_MODE = "GAME_MODE"
-    WAIT_VORBEHALT = "WAIT_VORBEHALT"
-    WAIT_PLAYERS = "WAIT_PLAYERS"
-    PLAYER_JOINED = "PLAYER_JOINED"
-    GAME_STARTED = "GAME_STARTED"
-    ROUND_STARTED = "ROUND_STARTED"
-
-
 class Event(BaseModel):
     e_id: int = Field(default=None, description="Automatically set by server.")
     sender: str = Field(max_length=20, min_length=2)
     e_type: EventType = Field(frozen=True)
-    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True)
-    add_data: str = Field(default=None, description="Required for a few events, such as chat messages.")
+    content: Card | Absage | Vorbehalt = Field(frozen=True, default=None)
+    text_content: str = Field(frozen=True, default="", max_length=150)
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
@@ -164,8 +140,6 @@ class Event(BaseModel):
         if self.e_type == EventType.ABSAGE and type(self.content) != Absage:
             raise ValueError('event type and content do not match')
         if self.e_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
-            raise ValueError('event type and content do not match')
-        if self.e_type == EventType.SERVER and type(self.content) != ServerMsg:
             raise ValueError('event type and content do not match')
         return self
 

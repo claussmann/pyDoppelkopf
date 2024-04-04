@@ -16,7 +16,7 @@ class Game():
         self.round_cnt = 1
         self.active_round = None
         self.events = list()
-        self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER, content=ServerMsg.WAIT_PLAYERS))
+        self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.WAIT_PLAYERS))
 
 
     def join(self, name):
@@ -29,8 +29,7 @@ class Game():
                 self.players_order.append(name)
                 self.players_points[name] = 0
                 self.players_solos[name] = 0
-                self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER,
-                                content=ServerMsg.PLAYER_JOINED, add_data=name))
+                self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.PLAYER_JOINED, text_content=name))
                 if len(self.players) == 4:
                     self._new_round()
                 return PlayerPrivate(token=token, player_name=name)
@@ -50,6 +49,8 @@ class Game():
                 return False
             if not self.players[token] == event.sender:
                 return False
+            if event.e_type.is_server_privilege():
+                return False
             match event.e_type:
                 case EventType.KARTE:
                     if self.active_round.new_card_event(event):
@@ -66,18 +67,10 @@ class Game():
                             self.events.append(event)
                             if self.active_round.ready_to_play():
                                 self.events.append(
-                                    Event(e_id=len(self.events),
-                                        sender="Server",
-                                        e_type=EventType.SERVER,
-                                        content=ServerMsg.GAME_MODE, add_data=self.active_round.get_game_mode()
-                                    )
+                                    Event(e_id=len(self.events), sender="Server", e_type=EventType.GAME_MODE, content=self.active_round.get_game_mode())
                                 )
                                 self.events.append(
-                                    Event(e_id=len(self.events),
-                                        sender="Server",
-                                        e_type=EventType.SERVER,
-                                        content=ServerMsg.ROUND_STARTED, add_data=self.active_round.get_current_turn_player()
-                                    )
+                                    Event(e_id=len(self.events), sender="Server", e_type=EventType.ROUND_STARTED, text_content=self.active_round.get_current_turn_player())
                                 )
                                 if event.content.is_solo():
                                     self.players_solos[event.sender] += 1
@@ -89,8 +82,6 @@ class Game():
 
     def _new_round(self):
         self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3], self.starter)
-        self.events.append(Event(e_id=len(self.events), sender="Server",
-                            e_type=EventType.SERVER, content=ServerMsg.GAME_STARTED))
-        self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.SERVER,
-                            content=ServerMsg.WAIT_VORBEHALT, add_data=self.active_round.get_current_turn_player()))
+        self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.WAIT_VORBEHALT,
+                            text_content=self.active_round.get_current_turn_player()))
         self.starter = (self.starter + 1) % 4
