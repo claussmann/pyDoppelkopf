@@ -126,11 +126,21 @@ class Absage(Enum):
     KONTRA_WINS = "KONTRA_WINS"
 
 
+class Stich(BaseModel):
+    owner: str = Field(description="Who won the stich")
+    stich_counter: int = Field(description="In which turn of a round was the stich made?")
+    cards: list[Card] = Field(description="Cards in the stich")
+
+    def compute_points(self) -> int:
+        # TODO
+        return 0
+
+
 class Event(BaseModel):
     e_id: int = Field(default=None, description="Automatically set by server.")
     sender: str = Field(max_length=20, min_length=2)
     e_type: EventType = Field(frozen=True)
-    content: Card | Absage | Vorbehalt = Field(frozen=True, default=None)
+    content: Card | Absage | Vorbehalt | Stich = Field(frozen=True, default=None)
     text_content: str = Field(frozen=True, default="", max_length=150)
 
     @model_validator(mode='after')
@@ -141,7 +151,10 @@ class Event(BaseModel):
             raise ValueError('event type and content do not match')
         if self.e_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
             raise ValueError('event type and content do not match')
+        if self.e_type == EventType.STICH and type(self.content) != Stich:
+            raise ValueError('event type and content do not match')
         return self
+
 
 class GameInfo(BaseModel):
     game_id: str = Field(default=None, description="Game ID")

@@ -53,35 +53,54 @@ class Game():
                 return False
             match event.e_type:
                 case EventType.KARTE:
-                    if self.active_round.new_card_event(event):
-                        with self.mutex:
-                            event.e_id = len(self.events)
-                            self.events.append(event)
-                        return True
+                    return self._process_card_event(event)
                 case EventType.VORBEHALT:
-                    if event.content.is_pflicht_solo() and self.players_solos[event.sender] > 0:
-                        return False # Pflichtsolo can only be played once.
-                    if self.active_round.new_vorbehalt_event(event):
-                        with self.mutex:
-                            event.e_id = len(self.events)
-                            self.events.append(event)
-                            if self.active_round.ready_to_play():
-                                self.events.append(
-                                    Event(e_id=len(self.events), sender="Server", e_type=EventType.GAME_MODE, content=self.active_round.get_game_mode())
-                                )
-                                self.events.append(
-                                    Event(e_id=len(self.events), sender="Server", e_type=EventType.ROUND_STARTED, text_content=self.active_round.get_current_turn_player())
-                                )
-                                if event.content.is_solo():
-                                    self.players_solos[event.sender] += 1
-                        return True
+                    return self._process_vorbehalt_event(event)
         return False
 
     def get_game_info(self) -> GameInfo:
         return GameInfo(round_counter=self.round_cnt, players=self.players_order.copy())
+
+
+
+
+    ##################################
+    ####### Private Helpers ##########
+    ##################################
 
     def _new_round(self):
         self.active_round = Runde(self.players_order[0], self.players_order[1], self.players_order[2], self.players_order[3], self.starter)
         self.events.append(Event(e_id=len(self.events), sender="Server", e_type=EventType.WAIT_VORBEHALT,
                             text_content=self.active_round.get_current_turn_player()))
         self.starter = (self.starter + 1) % 4
+
+    def _process_card_event(self, event):
+        if self.active_round.put_card(event.sender, event.content):
+            with self.mutex:
+                event.e_id = len(self.events)
+                self.events.append(event)
+            if self.active_round.is_stich_complete():
+                stich = self.active_round.process_stich()
+                with self.mutex:
+                    stich_event = Event(e_id=len(self.events), sender="Server", e_type=EventType.STICH, content=stich)
+                    self.events.append(stich_event)
+            return True
+        return False
+
+    def _process_vorbehalt_event(self, event):
+        if event.content.is_pflicht_solo() and self.players_solos[event.sender] > 0:
+            return False # Pflichtsolo can only be played once.
+        if self.active_round.ansagen(event.sender, event.content):
+            with self.mutex:
+                event.e_id = len(self.events)
+                self.events.append(event)
+                if self.active_round.ready_to_play():
+                    self.events.append(
+                        Event(e_id=len(self.events), sender="Server", e_type=EventType.GAME_MODE, content=self.active_round.get_game_mode())
+                    )
+                    self.events.append(
+                        Event(e_id=len(self.events), sender="Server", e_type=EventType.ROUND_STARTED, text_content=self.active_round.get_current_turn_player())
+                    )
+                    if event.content.is_solo():
+                        self.players_solos[event.sender] += 1
+            return True
