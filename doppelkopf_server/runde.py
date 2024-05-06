@@ -96,8 +96,15 @@ class Runde:
         return self.cards_in_stich >= 4
 
     def process_stich(self) -> Stich:
-        # TODO: Compute winner
-        winner = self.players[0]
+        first_player = self.players[self.current_turn]
+        winner = first_player
+        win_card = self.table[winner]
+        for i in range(4):
+            p = self.players[(self.current_turn + i) % 4]
+            c = self.table[p]
+            if c.is_higher(win_card, self.game_mode, self.stich_cnt, self.table[winner]):
+                winner = p
+                win_card = c
         stich = Stich(owner=winner, stich_counter=self.stich_cnt, cards=self.table.values())
         self.stiche.append(stich)
         for p in self.table.keys():

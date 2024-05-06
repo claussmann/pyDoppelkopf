@@ -38,6 +38,8 @@ class Card(Enum):
     S9 = "S9"; SJ = "SJ"; SQ = "SQ"; SK = "SK"; S10 = "S10"; SA = "SA"
     # Clubs
     C9 = "C9"; CJ = "CJ"; CQ = "CQ"; CK = "CK"; C10 = "C10"; CA = "CA"
+    # Colors
+    DIAMOND = "DIAMOND"; HEART = "HEART"; CLUBS = "CLUBS"; SPADES = "SPADES"
 
     def is_diamond(self):
         dia = [Card.D9, Card.DK, Card.DJ, Card.DD, Card.D10, Card.DA]
@@ -55,6 +57,15 @@ class Card(Enum):
         cross = [Card.C9, Card.CK, Card.CJ, Card.CD, Card.C10, Card.CA]
         return self in cross
 
+    def color(self):
+        if self.is_diamond():
+            return Card.DIAMOND
+        if self.is_heart():
+            return Card.HEART
+        if self.is_clubs():
+            return Card.CLUBS
+        return Card.SPADES 
+
     def counting_value(self):
         if self in [Card.DJ, Card.HJ, Card.CJ, Card.SJ]:
             return 2
@@ -67,6 +78,40 @@ class Card(Enum):
         if self in [Card.DA, Card.HA, Card.CA, Card.SA]:
             return 11
         return 0
+
+    @classmethod
+    def trumpf_list(game_mode):
+        if game_mode in [Vorbehalt.GESUND, Vorbehalt.GESUND]:
+            return [Card.Superschwein, Card.Schwein, Card.H10,
+                    Card.CQ, Card.SQ, Card.HQ, Card.DQ,
+                    Card.CJ, Card.SJ, Card.HJ, Card.DJ,
+                    Card.DA, Card.D10, Card.DK, Card.D9]
+        return []
+
+    def is_trumpf(self, game_mode):
+        return self in trumpf_list(game_mode)
+
+    def is_higher(self, other, game_mode, stich_cnt, first_card) -> bool:
+        spades_seq = [Card.SA, Card.S10, Card.SK, Card.SQ, Card.SJ, Card.S9]
+        cross_seq = [Card.CA, Card.C10, Card.CK, Card.CQ, Card.CJ, Card.C9]
+        heart_seq = [Card.HA, Card.H10, Card.HK, Card.HQ, Card.HJ, Card.H9]
+        diamond_seq = [Card.DA, Card.D10, Card.DK, Card.DQ, Card.DJ, Card.D9]
+        if self.is_trumpf(game_mode):
+            t = trumpf_list(game_mode)
+            return t.index(self) < t.index(other)
+        else:
+            if first_card.color() is not self.color():
+                return False
+            match first_card.color():
+                case Card.DIAMOND:
+                    return diamond_seq.index(self) < diamond_seq(other)
+                case Card.HEART:
+                    return heart_seq.index(self) < heart_seq(other)
+                case Card.SPADES:
+                    return spades_seq.index(self) < spades_seq(other)
+                case Card.CLUBS:
+                    return clubs_seq.index(self) < clubs_seq(other)
+        return False
 
 
 class Vorbehalt(Enum):
