@@ -41,7 +41,7 @@ async def get_game_info(game_id) -> GameInfo:
     return ret
 
 @app.post("/{game_id}/join")
-def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\-\_]*$")]) -> PlayerPrivate:
+def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\\-\\_]*$")]) -> PlayerPrivate:
     """
     Join the game with provided game id as player with the provided name.
     A player authentication token is returned, which is needed to perform
@@ -50,12 +50,12 @@ def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, 
     return app.games[game_id].join(player_name)
 
 @app.get("/{game_id}/cards")
-async def get_cards(game_id, player_token:str) -> List[Card]:
+async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
     """
     Get the cards the player has on the hand.
     Played cards will not appear here.
     """
-    return app.games[game_id].get_cards(player_token)
+    return app.games[game_id].get_cards(player_name, player_token)
 
 @app.get("/{game_id}/event")
 async def get_events(game_id, from_event_id:int=0) -> List[Event]:

@@ -42,20 +42,20 @@ class Card(Enum):
     DIAMOND = "DIAMOND"; HEART = "HEART"; CLUBS = "CLUBS"; SPADES = "SPADES"
 
     def is_diamond(self):
-        dia = [Card.D9, Card.DK, Card.DJ, Card.DD, Card.D10, Card.DA]
+        dia = [Card.D9, Card.DK, Card.DJ, Card.DQ, Card.D10, Card.DA]
         return self in dia
 
     def is_heart(self):
-        hearts = [Card.H9, Card.HK, Card.HJ, Card.HD, Card.H10, Card.HA]
+        hearts = [Card.H9, Card.HK, Card.HJ, Card.HQ, Card.H10, Card.HA]
         return self in hearts
 
     def is_spades(self):
-        spades = [Card.S9, Card.SK, Card.SJ, Card.SD, Card.S10, Card.SA]
+        spades = [Card.S9, Card.SK, Card.SJ, Card.SQ, Card.S10, Card.SA]
         return self in spades
 
-    def is_cross(self):
-        cross = [Card.C9, Card.CK, Card.CJ, Card.CD, Card.C10, Card.CA]
-        return self in cross
+    def is_clubs(self):
+        clubs = [Card.C9, Card.CK, Card.CJ, Card.CQ, Card.C10, Card.CA]
+        return self in clubs
 
     def color(self):
         if self.is_diamond():
@@ -79,41 +79,6 @@ class Card(Enum):
             return 11
         return 0
 
-    @classmethod
-    def trumpf_list(game_mode):
-        if game_mode in [Vorbehalt.GESUND, Vorbehalt.GESUND]:
-            return [Card.Superschwein, Card.Schwein, Card.H10,
-                    Card.CQ, Card.SQ, Card.HQ, Card.DQ,
-                    Card.CJ, Card.SJ, Card.HJ, Card.DJ,
-                    Card.DA, Card.D10, Card.DK, Card.D9]
-        return []
-
-    def is_trumpf(self, game_mode):
-        return self in trumpf_list(game_mode)
-
-    def is_higher(self, other, game_mode, stich_cnt, first_card) -> bool:
-        spades_seq = [Card.SA, Card.S10, Card.SK, Card.SQ, Card.SJ, Card.S9]
-        cross_seq = [Card.CA, Card.C10, Card.CK, Card.CQ, Card.CJ, Card.C9]
-        heart_seq = [Card.HA, Card.H10, Card.HK, Card.HQ, Card.HJ, Card.H9]
-        diamond_seq = [Card.DA, Card.D10, Card.DK, Card.DQ, Card.DJ, Card.D9]
-        if self.is_trumpf(game_mode):
-            t = trumpf_list(game_mode)
-            return t.index(self) < t.index(other)
-        else:
-            if first_card.color() is not self.color():
-                return False
-            match first_card.color():
-                case Card.DIAMOND:
-                    return diamond_seq.index(self) < diamond_seq(other)
-                case Card.HEART:
-                    return heart_seq.index(self) < heart_seq(other)
-                case Card.SPADES:
-                    return spades_seq.index(self) < spades_seq(other)
-                case Card.CLUBS:
-                    return clubs_seq.index(self) < clubs_seq(other)
-        return False
-
-
 class Vorbehalt(Enum):
     GESUND = "GESUND"
     HOCHZEIT = "HOCHZEIT"
@@ -128,42 +93,14 @@ class Vorbehalt(Enum):
     FARBSOLO_HEART = "FARBSOLO_HEART"
     FARBSOLO_CLUBS = "FARBSOLO_CLUBS"
     FARBSOLO_SPADES = "FARBSOLO_SPADES"
-    #
-    PFLICHT_SOLO = "PFLICHT_SOLO"
-    PFLICHT_FLEISCHLOSER = "PFLICHT_FLEISCHLOSER"
-    PFLICHT_BUBENSOLO = "PFLICHT_BUBENSOLO"
-    PFLICHT_DAMENSOLO = "PFLICHT_DAMENSOLO"
-    PFLICHT_FARBSOLO_DIAMOND = "PFLICHT_FARBSOLO_DIAMOND"
-    PFLICHT_FARBSOLO_HEART = "PFLICHT_FARBSOLO_HEART"
-    PFLICHT_FARBSOLO_CLUBS = "PFLICHT_FARBSOLO_CLUBS"
-    PFLICHT_FARBSOLO_SPADES = "PFLICHT_FARBSOLO_SPADES"
 
     def is_solo(self):
         return self not in [Vorbehalt.GESUND, Vorbehalt.HOCHZEIT, Vorbehalt.ARMUT, Vorbehalt.SCHMEISSEN]
 
-    def is_pflicht_solo(self):
-        return self in [Vorbehalt.PFLICHT_SOLO, Vorbehalt.PFLICHT_FLEISCHLOSER, Vorbehalt.PFLICHT_BUBENSOLO,
-                        Vorbehalt.PFLICHT_DAMENSOLO, Vorbehalt.PFLICHT_FARBSOLO_DIAMOND, Vorbehalt.PFLICHT_FARBSOLO_HEART,
-                        Vorbehalt.PFLICHT_FARBSOLO_CLUBS, Vorbehalt.PFLICHT_FARBSOLO_SPADES]
-
     def has_priority_over(self, other):
-        if other == Vorbehalt.SCHMEISSEN:
-            return False
-        if self.is_pflicht_solo():
-            return True
-        if other.is_pflicht_solo():
-            return False
-        if self.is_solo():
-            return True
-        if other.is_solo():
-            return False
-        if self == Vorbehalt.ARMUT:
-            return True
-        if self == Vorbehalt.HOCHZEIT and other != Vorbehalt.ARMUT:
-            return True
-        if self == Vorbehalt.GESUND and other != Vorbehalt.GESUND:
-            return False
-        return True
+        # TODO: Other cases
+        priorities = [Vorbehalt.SCHMEISSEN, Vorbehalt.ARMUT, Vorbehalt.SOLO, Vorbehalt.GESUND]
+        return priorities.index(self) < priorities.index(other)
 
 
 class Absage(Enum):
@@ -171,21 +108,11 @@ class Absage(Enum):
     KONTRA_WINS = "KONTRA_WINS"
 
 
-class Stich(BaseModel):
-    owner: str = Field(description="Who won the stich")
-    stich_counter: int = Field(description="In which turn of a round was the stich made?")
-    cards: list[Card] = Field(description="Cards in the stich")
-
-    def compute_points(self) -> int:
-        # TODO
-        return 0
-
-
 class Event(BaseModel):
     e_id: int = Field(default=None, description="Automatically set by server.")
     sender: str = Field(max_length=20, min_length=2)
     e_type: EventType = Field(frozen=True)
-    content: Card | Absage | Vorbehalt | Stich = Field(frozen=True, default=None)
+    content: Card | Absage | Vorbehalt = Field(frozen=True, default=None)
     text_content: str = Field(frozen=True, default="", max_length=150)
 
     @model_validator(mode='after')

@@ -165,7 +165,7 @@ function update_table(){
 }
 
 async function update_own_cards(){
-    var url = "http://" + HOST + "/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN;
+    var url = "http://" + HOST + "/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
     const response = await fetch(url, {
         method: "GET",
         headers: {"Content-Type": "application/json",},
