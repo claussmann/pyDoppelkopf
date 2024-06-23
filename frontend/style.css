@@ -32,6 +32,11 @@ input[type=text]{
     margin: 5px 2px;
 }
 
+.own_card_hand {
+    margin-top: 50px;
+    text-align: center;
+}
+
 .card {
     background-color: #f4efff;
     color: black;
@@ -39,6 +44,8 @@ input[type=text]{
     border-radius: 4px;
     font-size: 20px;
     padding: 30px 20px;
+    min-height: 120px;
+    min-width: 80px;
 }
 
 .table_card {
@@ -48,6 +55,28 @@ input[type=text]{
     border-radius: 4px;
     font-size: 20px;
     padding: 24px 16px;
+    min-height: 90px;
+    min-width: 60px;
+}
+
+.table_cell_card {
+    width: 150px;
+    text-align: center;
+}
+
+.table_name {
+    color: #131313;
+    font-size: 20pt;
+}
+
+.table_cell_name {
+    width: 100px;
+    text-align: center;
+}
+
+.table_name_active {
+    color: #6e0606;
+    font-weight: 600;
 }
 
 .table {

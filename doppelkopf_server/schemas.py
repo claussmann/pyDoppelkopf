@@ -15,60 +15,56 @@ class EventType(Enum):
     KARTE = "KARTE"
     SERVER = "SERVER"
     CHAT = "CHAT"
+    GAME_MODE = "GAME_MODE"
+    WAIT_VORBEHALT = "WAIT_VORBEHALT"
+    WAIT_PLAYERS = "WAIT_PLAYERS"
+    PLAYER_JOINED = "PLAYER_JOINED"
+    ROUND_STARTED = "ROUND_STARTED"
+    STICH = "STICH"
+
+    def is_server_privilege(self):
+        return self in [EventType.GAME_MODE, EventType.WAIT_VORBEHALT, EventType.WAIT_PLAYERS,
+                    EventType.PLAYER_JOINED, EventType.ROUND_STARTED, EventType.STICH]
 
 
 class Card(Enum):
     # Special
-    SCHWEIN = "SCHWEIN"
-    SUPERSCHWEIN = "SUPERSCHWEIN"
-
+    SCHWEIN = "SCHWEIN"; SUPERSCHWEIN = "SUPERSCHWEIN"
     # Diamonds
-    D9 = "D9"
-    DJ = "DJ"
-    DQ = "DQ"
-    DK = "DK"
-    D10 = "D10"
-    DA = "DA"
-
+    D9 = "D9"; DJ = "DJ"; DQ = "DQ"; DK = "DK"; D10 = "D10"; DA = "DA"
     # Heart
-    H9 = "H9"
-    HJ = "HJ"
-    HQ = "HQ"
-    HK = "HK"
-    H10 = "H10"
-    HA = "HA"
-
+    H9 = "H9"; HJ = "HJ"; HQ = "HQ"; HK = "HK"; H10 = "H10"; HA = "HA"
     # Spades
-    S9 = "S9"
-    SJ = "SJ"
-    SQ = "SQ"
-    SK = "SK"
-    S10 = "S10"
-    SA = "SA"
-
+    S9 = "S9"; SJ = "SJ"; SQ = "SQ"; SK = "SK"; S10 = "S10"; SA = "SA"
     # Clubs
-    C9 = "C9"
-    CJ = "CJ"
-    CQ = "CQ"
-    CK = "CK"
-    C10 = "C10"
-    CA = "CA"
+    C9 = "C9"; CJ = "CJ"; CQ = "CQ"; CK = "CK"; C10 = "C10"; CA = "CA"
+    # Colors
+    DIAMOND = "DIAMOND"; HEART = "HEART"; CLUBS = "CLUBS"; SPADES = "SPADES"
 
     def is_diamond(self):
-        dia = [Card.D9, Card.DK, Card.DJ, Card.DD, Card.D10, Card.DA]
+        dia = [Card.D9, Card.DK, Card.DJ, Card.DQ, Card.D10, Card.DA]
         return self in dia
 
     def is_heart(self):
-        hearts = [Card.H9, Card.HK, Card.HJ, Card.HD, Card.H10, Card.HA]
+        hearts = [Card.H9, Card.HK, Card.HJ, Card.HQ, Card.H10, Card.HA]
         return self in hearts
 
     def is_spades(self):
-        spades = [Card.S9, Card.SK, Card.SJ, Card.SD, Card.S10, Card.SA]
+        spades = [Card.S9, Card.SK, Card.SJ, Card.SQ, Card.S10, Card.SA]
         return self in spades
 
-    def is_cross(self):
-        cross = [Card.C9, Card.CK, Card.CJ, Card.CD, Card.C10, Card.CA]
-        return self in cross
+    def is_clubs(self):
+        clubs = [Card.C9, Card.CK, Card.CJ, Card.CQ, Card.C10, Card.CA]
+        return self in clubs
+
+    def color(self):
+        if self.is_diamond():
+            return Card.DIAMOND
+        if self.is_heart():
+            return Card.HEART
+        if self.is_clubs():
+            return Card.CLUBS
+        return Card.SPADES 
 
     def counting_value(self):
         if self in [Card.DJ, Card.HJ, Card.CJ, Card.SJ]:
@@ -83,11 +79,12 @@ class Card(Enum):
             return 11
         return 0
 
-
 class Vorbehalt(Enum):
     GESUND = "GESUND"
     HOCHZEIT = "HOCHZEIT"
     ARMUT = "ARMUT"
+    SCHMEISSEN = "SCHMEISSEN"
+    #
     SOLO = "SOLO"
     FLEISCHLOSER = "FLEISCHLOSER"
     BUBENSOLO = "BUBENSOLO"
@@ -98,14 +95,12 @@ class Vorbehalt(Enum):
     FARBSOLO_SPADES = "FARBSOLO_SPADES"
 
     def is_solo(self):
-        return self in [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER,
-                    Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
+        return self not in [Vorbehalt.GESUND, Vorbehalt.HOCHZEIT, Vorbehalt.ARMUT, Vorbehalt.SCHMEISSEN]
 
     def has_priority_over(self, other):
-        priority = [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
-        if other not in priority:
-            return True
-        return priority.index(self) > priority.index(other)
+        # TODO: Other cases
+        priorities = [Vorbehalt.SCHMEISSEN, Vorbehalt.ARMUT, Vorbehalt.SOLO, Vorbehalt.GESUND]
+        return priorities.index(self) < priorities.index(other)
 
 
 class Absage(Enum):
@@ -113,20 +108,12 @@ class Absage(Enum):
     KONTRA_WINS = "KONTRA_WINS"
 
 
-class ServerMsg(Enum):
-    GAME_MODE = "GAME_MODE"
-    WAIT_VORBEHALT = "WAIT_VORBEHALT"
-    WAIT_PLAYERS = "WAIT_PLAYERS"
-    PLAYER_JOINED = "PLAYER_JOINED"
-    GAME_STARTED = "GAME_STARTED"
-
-
 class Event(BaseModel):
     e_id: int = Field(default=None, description="Automatically set by server.")
     sender: str = Field(max_length=20, min_length=2)
     e_type: EventType = Field(frozen=True)
-    content: Card | Absage | Vorbehalt | ServerMsg = Field(frozen=True)
-    add_data: str = Field(default=None, description="Required for a few events, such as chat messages.")
+    content: Card | Absage | Vorbehalt = Field(frozen=True, default=None)
+    text_content: str = Field(frozen=True, default="", max_length=150)
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
@@ -136,9 +123,10 @@ class Event(BaseModel):
             raise ValueError('event type and content do not match')
         if self.e_type == EventType.VORBEHALT and type(self.content) != Vorbehalt:
             raise ValueError('event type and content do not match')
-        if self.e_type == EventType.SERVER and type(self.content) != ServerMsg:
+        if self.e_type == EventType.STICH and type(self.content) != Stich:
             raise ValueError('event type and content do not match')
         return self
+
 
 class GameInfo(BaseModel):
     game_id: str = Field(default=None, description="Game ID")
