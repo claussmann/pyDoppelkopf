@@ -1,8 +1,10 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "extensions" : [
-      "ms-python.python"
-    ]
+    "vscode": {
+			"extensions": [
+				"ms-python.python"
+			]
+		}
   }
 }
