@@ -1,10 +1,19 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
+
+  "updateContentCommand": "pip install -r requirements.txt",
+  
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "doppelkopf_server/main.py"
+      ]
+    },
+
     "vscode": {
-			"extensions": [
-				"ms-python.python"
-			]
-		}
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
   }
 }
