@@ -1,0 +1,24 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+  "updateContentCommand": "pip install -r requirements.txt",
+
+  "postAttachCommand": {
+    "server": "uvicorn doppelkopf_server.main:app --reload"
+  },
+  
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "doppelkopf_server/main.py",
+        "README.md"
+      ]
+    },
+
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  }
+}
