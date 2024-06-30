@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 from doppelkopf_server.game import Game
 from doppelkopf_server.schemas import *
@@ -12,6 +13,12 @@ app.mount("/ui", StaticFiles(directory="doppelkopf_server/frontend"), name="ui")
 
 app.games = dict()
 
+@app.get("/")
+async def redirect_to_user_interface() -> GameInfo:
+    """
+    Forward to UI
+    """
+    return RedirectResponse("/ui/index.html")
 
 @app.post("/api/new_game")
 def new_game() -> GameInfo:
