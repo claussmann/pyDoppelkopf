@@ -8,7 +8,14 @@
   "updateContentCommand": "pip install -r requirements.txt",
 
   "postAttachCommand": {
-    "server": "uvicorn doppelkopf_server.main:app --reload"
+    "server": "uvicorn doppelkopf_server.main:app --port 8000"
+  },
+
+  "portsAttributes": {
+    "8000": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
   },
   
   "customizations": {
