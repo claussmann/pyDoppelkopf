@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 from doppelkopf_server.game import Game
 from doppelkopf_server.schemas import *
@@ -8,18 +9,18 @@ import secrets
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.mount("/ui", StaticFiles(directory="doppelkopf_server/frontend"), name="ui")
 
 app.games = dict()
 
+@app.get("/")
+async def redirect_to_user_interface() -> GameInfo:
+    """
+    Forward to UI
+    """
+    return RedirectResponse("/ui/index.html")
 
-@app.post("/new_game")
+@app.post("/api/new_game")
 def new_game() -> GameInfo:
     """
     Creates a new game where players can join.
@@ -31,7 +32,7 @@ def new_game() -> GameInfo:
     ret.game_id = gid
     return ret
 
-@app.get("/{game_id}")
+@app.get("/api/{game_id}")
 async def get_game_info(game_id) -> GameInfo:
     """
     Get game info such as players and round count.
@@ -40,7 +41,7 @@ async def get_game_info(game_id) -> GameInfo:
     ret.game_id = game_id
     return ret
 
-@app.post("/{game_id}/join")
+@app.post("/api/{game_id}/join")
 def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\\-\\_]*$")]) -> PlayerPrivate:
     """
     Join the game with provided game id as player with the provided name.
@@ -49,7 +50,7 @@ def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, 
     """
     return app.games[game_id].join(player_name)
 
-@app.get("/{game_id}/cards")
+@app.get("/api/{game_id}/cards")
 async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
     """
     Get the cards the player has on the hand.
@@ -57,7 +58,7 @@ async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
     """
     return app.games[game_id].get_cards(player_name, player_token)
 
-@app.get("/{game_id}/event")
+@app.get("/api/{game_id}/event")
 async def get_events(game_id, from_event_id:int=0) -> List[Event]:
     """
     Get all events in this game in chronological order.
@@ -65,7 +66,7 @@ async def get_events(game_id, from_event_id:int=0) -> List[Event]:
     """
     return app.games[game_id].get_events(from_event_id)
 
-@app.post("/{game_id}/event")
+@app.post("/api/{game_id}/event")
 def new_event(game_id, player_token:str, event:Event) -> EventResponse:
     """
     Send a new event.

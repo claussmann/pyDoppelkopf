@@ -1,4 +1,3 @@
-const HOST = "localhost:8000"
 var PLAYER_TOKEN = "";
 var PLAYER_NAME = "";
 var GAME_ID = "";
@@ -30,7 +29,7 @@ function switch_view(view){
 }
 
 async function create_new_game() {
-    var url = "http://" + HOST + "/new_game";
+    var url = "/api/new_game";
     const response = await fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json",},
@@ -48,7 +47,7 @@ async function create_new_game() {
 }
 
 async function login_to_game(game_id, player_name) {
-    var url = "http://" + HOST + "/" + game_id + "/join?player_name=" + player_name;
+    var url = "/api/" + game_id + "/join?player_name=" + player_name;
     const response = await fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json",},
@@ -70,7 +69,7 @@ async function login_to_game(game_id, player_name) {
 }
 
 async function process_events() {
-    var url = "http://" + HOST + "/" + GAME_ID + "/event?from_event_id=" + EVENT_ID;
+    var url = "/api/" + GAME_ID + "/event?from_event_id=" + EVENT_ID;
     const response = await fetch(url, {
         method: "GET",
         headers: {"Content-Type": "application/json",},
@@ -165,7 +164,7 @@ function update_table(){
 }
 
 async function update_own_cards(){
-    var url = "http://" + HOST + "/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
+    var url = "/api/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
     const response = await fetch(url, {
         method: "GET",
         headers: {"Content-Type": "application/json",},
@@ -222,7 +221,7 @@ async function vorbehalt(vorbehalt) {
 }
 
 async function send_event(event) {
-    var url = "http://" + HOST + "/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
+    var url = "/api/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
     const response = await fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json",},
