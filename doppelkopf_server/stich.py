@@ -1,7 +1,9 @@
 import time
 from doppelkopf_server.schemas import *
+from pydantic import BaseModel, Field, model_validator
 
-class Stich:
+
+class Stich(BaseModel):
     def __init__(self, game_mode: Vorbehalt):
         self.cards_layed = list()
         self.spades_seq = [Card.SA, Card.S10, Card.SK, Card.SQ, Card.SJ, Card.S9]
