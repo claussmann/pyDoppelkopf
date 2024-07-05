@@ -109,17 +109,16 @@ async function process_events() {
                 update_table();
                 break;
             case "VORBEHALT":
-                TABLE_VORBEHALTE[e.sender] = e.content;
+						//Todo
+                TABLE_VORBEHALTE[e.content.name] = e.content.vorbehalt;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
             case "PLAYER_JOINED":
-                var joined_name = e.text_content;
+                var joined_name = e.content.name;
                 TABLE_PLAYERS.push(joined_name);
-                TABLE_CARDS[joined_name];
                 update_table();
                 break;
-						//Todo
             case "WAIT_VORBEHALT":
                 update_own_cards();
                 document.getElementById("vorbehalt").style.display = "block";
