@@ -73,3 +73,11 @@ def lay_card(game_id, player_token:str, card:Card) -> EventResponse:
     """
     ret = app.games[game_id].process_card(player_token, card)
     return EventResponse(successful=ret)
+
+@app.post("/api/{game_id}/say_vorbehalt")
+def say_vorbehalt(game_id, player_token:str, vorbehalt:Vorbehalt) -> EventResponse:
+    """
+    Say a vorbehalt.
+    """
+    ret = app.games[game_id].process_vorbehalt(player_token, vorbehalt)
+    return EventResponse(successful=ret)

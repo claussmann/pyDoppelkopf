@@ -195,12 +195,6 @@ async function update_own_cards(){
 
 async function lay_card(card_slot) {
     var card_content = HAND_CARDS[card_slot];
-		//TODO
-    var event = {
-        "sender": PLAYER_NAME,
-        "e_type": "KARTE",
-        "content": card_content,
-    }
 		var url = "/api/" + GAME_ID + "/lay_card?player_token=" + PLAYER_TOKEN + "&card=" + card_content;
     if(await api_post(url).successful){
         HAND_CARDS.splice(card_slot, 1);
@@ -217,12 +211,8 @@ async function lay_card(card_slot) {
 }
 
 async function vorbehalt(vorbehalt) {
-    var event = {
-        "sender": PLAYER_NAME,
-        "e_type": "VORBEHALT",
-        "content": vorbehalt,
-    }
-    if(await api_post_body(event).successful){
+		var url = "/api/" + GAME_ID + "/say_vorbehalt?player_token=" + PLAYER_TOKEN + "&vorbehalt=" + vorbehalt;
+    if(await api_post(event).successful){
         document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
     } else {
         console.log("Vorbehalt is not allowed.");
