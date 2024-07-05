@@ -201,7 +201,8 @@ async function lay_card(card_slot) {
         "e_type": "KARTE",
         "content": card_content,
     }
-    if(await api_post_body(event).successful){
+		var url = "/api/" + GAME_ID + "/lay_card?player_token=" + PLAYER_TOKEN + "&card=" + card_content;
+    if(await api_post(url).successful){
         HAND_CARDS.splice(card_slot, 1);
         for(i = 0; i < HAND_CARDS.length; i++){
             document.getElementById("card_"+i).textContent=HAND_CARDS[i];

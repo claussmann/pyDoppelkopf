@@ -62,15 +62,14 @@ async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
 async def get_events(game_id, from_event_id:int=0) -> List[Event]:
     """
     Get all events in this game in chronological order.
-    If provides, only events after the provided event id are returned.
+    If provided, only events after the provided event id are returned.
     """
     return app.games[game_id].get_events(from_event_id)
 
-@app.post("/api/{game_id}/event")
-def new_event(game_id, player_token:str, event:Event) -> EventResponse:
+@app.post("/api/{game_id}/lay_card")
+def lay_card(game_id, player_token:str, card:Card) -> EventResponse:
     """
-    Send a new event.
-    The event will be validated, i.e. it is checked whether the action is legal.
+    Lay a card.
     """
-    ret = app.games[game_id].new_event(player_token, event)
+    ret = app.games[game_id].process_card(player_token, card)
     return EventResponse(successful=ret)
