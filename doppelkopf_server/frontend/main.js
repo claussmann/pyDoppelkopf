@@ -9,6 +9,56 @@ var TABLE_VORBEHALTE = {};
 var HAND_CARDS = [];
 var GAMEMODE = "GESUND";
 var CURRENT_TURN = 0;
+var DEBUG = true;
+
+async function api_get(url) {
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+    });
+    if(response.status != 200){
+        alert("Error while calling API");
+				console.log(response);
+        return;
+    }
+		if(DEBUG){
+			console.log(response.json());
+		}
+    return await response.json();
+}
+
+async function api_post(url) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+    });
+    if(response.status != 200){
+        alert("Error while calling API");
+				console.log(response);
+        return;
+    }
+		if(DEBUG){
+			console.log(response.json());
+		}
+    return await response.json();
+}
+
+async function api_post_body(url, body) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+        body: JSON.stringify(body),
+    });
+    if(response.status != 200){
+        alert("Error (ID: 5)");
+        console.log(response);
+        return false;
+    }
+    return await response.json();
+}
 
 function switch_view(view){
     if(view === "CREATE"){
@@ -30,39 +80,18 @@ function switch_view(view){
 
 async function create_new_game() {
     var url = "/api/new_game";
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 1)");
-        return;
-    }
-    var game_obj = await response.json();
+    var game_obj = await api_post(url);
     gid = game_obj.game_id;
-    console.log("INFO: Game ID is " + gid)
     document.getElementById("gid_field").value = gid;
     switch_view("JOIN");
 }
 
 async function login_to_game(game_id, player_name) {
     var url = "/api/" + game_id + "/join?player_name=" + player_name;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 2)");
-        console.log(response);
-        return;
-    }
-    var token_obj = await response.json();
+    var token_obj = await api_post(url);
     PLAYER_TOKEN = token_obj.token;
     PLAYER_NAME = token_obj.player_name;
     GAME_ID = game_id
-    console.log("INFO: Your token is " + PLAYER_TOKEN);
     document.getElementById("display_game_id").textContent=GAME_ID;
     switch_view("PLAY")
     PERIODIC_CALL = setInterval(process_events, 2000);
@@ -70,19 +99,8 @@ async function login_to_game(game_id, player_name) {
 
 async function process_events() {
     var url = "/api/" + GAME_ID + "/event?from_event_id=" + EVENT_ID;
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 3)");
-        console.log(response);
-        return;
-    }
-    var event_list = await response.json();
+    var event_list = await api_get(url);
     event_list.forEach( (e) => {
-        console.log(e);
         EVENT_ID = e.e_id + 1;
         switch(e.e_type){
             case "KARTE":
@@ -101,6 +119,7 @@ async function process_events() {
                 TABLE_CARDS[joined_name];
                 update_table();
                 break;
+						//Todo
             case "WAIT_VORBEHALT":
                 update_own_cards();
                 document.getElementById("vorbehalt").style.display = "block";
@@ -165,19 +184,8 @@ function update_table(){
 
 async function update_own_cards(){
     var url = "/api/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 4)");
-        console.log(response);
-        return;
-    }
-    HAND_CARDS = await response.json();
+    HAND_CARDS = await api_get(url);
     sort_cards();
-    console.log(HAND_CARDS);
     for(i = 0; i < HAND_CARDS.length; i++){
         document.getElementById("card_"+i).textContent=HAND_CARDS[i];
     }
@@ -188,12 +196,13 @@ async function update_own_cards(){
 
 async function lay_card(card_slot) {
     var card_content = HAND_CARDS[card_slot];
+		//TODO
     var event = {
         "sender": PLAYER_NAME,
         "e_type": "KARTE",
         "content": card_content,
     }
-    if(await send_event(event)){
+    if(await api_post_body(event).successful){
         HAND_CARDS.splice(card_slot, 1);
         for(i = 0; i < HAND_CARDS.length; i++){
             document.getElementById("card_"+i).textContent=HAND_CARDS[i];
@@ -213,28 +222,11 @@ async function vorbehalt(vorbehalt) {
         "e_type": "VORBEHALT",
         "content": vorbehalt,
     }
-    if(await send_event(event)){
+    if(await api_post_body(event).successful){
         document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
     } else {
         console.log("Vorbehalt is not allowed.");
     }
-}
-
-async function send_event(event) {
-    var url = "/api/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-        body: JSON.stringify(event),
-    });
-    if(response.status != 200){
-        alert("Error (ID: 5)");
-        console.log(response);
-        return false;
-    }
-    var event_resp = await response.json();
-    return event_resp.successful;
 }
 
 function sort_cards(){
