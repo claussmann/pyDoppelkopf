@@ -21,25 +21,14 @@ async def redirect_to_user_interface() -> GameInfo:
     return RedirectResponse("/ui/index.html")
 
 @app.post("/api/new_game")
-def new_game() -> GameInfo:
+def new_game() -> GameCreatedInfo:
     """
     Creates a new game where players can join.
     The game is reachable by the game id returned on a successful call.
     """
-    gid = str(secrets.token_hex(6))
-    app.games[gid] = Game()
-    ret = app.games[gid].get_game_info()
-    ret.game_id = gid
-    return ret
-
-@app.get("/api/{game_id}")
-async def get_game_info(game_id) -> GameInfo:
-    """
-    Get game info such as players and round count.
-    """
-    ret = app.games[game_id].get_game_info()
-    ret.game_id = game_id
-    return ret
+    gid = str(secrets.token_hex(10))
+    app.games[gid] = Game(gid)
+    return GameCreatedInfo(game_id=gid)
 
 @app.post("/api/{game_id}/join")
 def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\\-\\_]*$")]) -> PlayerPrivate:
@@ -50,13 +39,13 @@ def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, 
     """
     return app.games[game_id].join(player_name)
 
-@app.get("/api/{game_id}/cards")
-async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
+@app.get("/api/{game_id}/playerinfo")
+async def get_cards(game_id, player_token:str) -> PlayerPrivate:
     """
     Get the cards the player has on the hand.
     Played cards will not appear here.
     """
-    return app.games[game_id].get_cards(player_name, player_token)
+    return app.games[game_id].get_player_info(player_token)
 
 @app.get("/api/{game_id}/event")
 async def get_events(game_id, from_event_id:int=0) -> List[Event]:

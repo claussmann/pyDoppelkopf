@@ -7,7 +7,7 @@ var PERIODIC_CALL = 0;
 var PERIODIC_CALL_INTERVAL = 5000
 var TABLE_PLAYERS = {0: "--", 1: "--", 2: "--", 3: "--"};
 var TABLE_CARDS = {0: "--", 1: "--", 2: "--", 3: "--"};
-var TABLE_VORBEHALTE = {};
+var TABLE_VORBEHALTE = {0: "--", 1: "--", 2: "--", 3: "--"};
 var HAND_CARDS = [];
 var GAMEMODE = "GESUND";
 var CURRENT_TURN = 0;
@@ -88,18 +88,17 @@ function switch_view(view){
 
 async function create_new_game() {
     var url = "/api/new_game";
-    var game_obj = await api_post(url);
-    gid = game_obj.game_id;
-    document.getElementById("gid_field").value = gid;
+    var resp = await api_post(url);
+    document.getElementById("gid_field").value = resp.game_id;
     switch_view("JOIN");
 }
 
 async function login_to_game(game_id, player_name) {
     var url = "/api/" + game_id + "/join?player_name=" + player_name;
-    var token_obj = await api_post(url);
-    PLAYER_TOKEN = token_obj.token;
-    PLAYER_NAME = token_obj.player_name;
-    PLAYER_POSITION = token_obj.position;
+    var player_private = await api_post(url);
+    PLAYER_TOKEN = player_private.token;
+    PLAYER_NAME = player_private.player_name;
+    PLAYER_POSITION = player_private.position;
     GAME_ID = game_id
     document.getElementById("display_game_id").textContent=GAME_ID;
     switch_view("PLAY")
@@ -113,12 +112,12 @@ async function process_events() {
         EVENT_ID = e.e_id + 1;
         switch(e.e_type){
             case "KARTE":
-                TABLE_CARDS[e.sender] = e.content;
+                TABLE_CARDS[e.content.played_by.position] = e.content.card;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
             case "VORBEHALT":
-                TABLE_VORBEHALTE[e.content.position] = e.content.vorbehalt;
+                TABLE_VORBEHALTE[e.content.said_by.position] = e.content.vorbehalt;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
@@ -126,27 +125,27 @@ async function process_events() {
                 TABLE_PLAYERS[e.content.position] = e.content.name;
                 update_table();
                 break;
-            case "WAIT_VORBEHALT":
-                update_own_cards();
-                document.getElementById("vorbehalt").style.display = "block";
-                document.getElementById("absage").style.display = "none";
-                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
-                document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
-                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
-                TABLE_VORBEHALTE = {};
-                update_table();
-                break;
-            case "GAMEMODE":
-                document.getElementById("vorbehalt").style.display = "none";
-                document.getElementById("absage").style.display = "block";
-                GAMEMODE = e.content;
-                document.getElementById("display_game_mode").textContent=GAMEMODE;
-                break;
-            case "ROUND_STARTED":
-                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
-                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
-                update_table();
-                break;
+            case "GAME_STATE_CHANGED":
+                switch(e.content.state){
+                    case "WAIT_VORBEHALT":
+                        update_own_cards();
+                        document.getElementById("vorbehalt").style.display = "block";
+                        document.getElementById("absage").style.display = "none";
+                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
+                        document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
+                        TABLE_VORBEHALTE = {0:"", 1:"", 2:"", 3:""};
+                        update_table();
+                        break;
+                    case "ROUND_STARTED":
+                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
+                        document.getElementById("vorbehalt").style.display = "none";
+                        document.getElementById("absage").style.display = "block";
+                        GAMEMODE = e.content.mode;
+                        document.getElementById("display_game_mode").textContent=GAMEMODE;
+                        CURRENT_TURN = e.content.whose_turn;
+                        update_table();
+                        break;
+                }
         }
     })
 }
@@ -159,13 +158,13 @@ function update_table(){
 
     document.getElementById("table_card_self").textContent=TABLE_CARDS[PLAYER_POSITION];
     document.getElementById("table_card_left").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
-    document.getElementById("table_card_front").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
-    document.getElementById("table_card_right").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_card_front").textContent=TABLE_CARDS[(PLAYER_POSITION+2)%4];
+    document.getElementById("table_card_right").textContent=TABLE_CARDS[(PLAYER_POSITION+3)%4];
 
     document.getElementById("table_vorbehalt_self").textContent=TABLE_VORBEHALTE[PLAYER_POSITION];
     document.getElementById("table_vorbehalt_left").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
-    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
-    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+2)%4];
+    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+3)%4];
 
     document.getElementById("player_self").classList.remove("table_name_active");
     document.getElementById("player_left").classList.remove("table_name_active");
@@ -180,8 +179,9 @@ function update_table(){
 }
 
 async function update_own_cards(){
-    var url = "/api/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
-    HAND_CARDS = await api_get(url);
+    var url = "/api/" + GAME_ID + "/playerinfo?player_token=" + PLAYER_TOKEN;
+    var resp = await api_get(url)
+    HAND_CARDS = resp.cards;
     sort_cards();
     for(i = 0; i < HAND_CARDS.length; i++){
         document.getElementById("card_"+i).textContent=HAND_CARDS[i];
@@ -193,8 +193,9 @@ async function update_own_cards(){
 
 async function lay_card(card_slot) {
     var card_content = HAND_CARDS[card_slot];
-		var url = "/api/" + GAME_ID + "/lay_card?player_token=" + PLAYER_TOKEN + "&card=" + card_content;
-    if(await api_post(url).successful){
+	var url = "/api/" + GAME_ID + "/lay_card?player_token=" + PLAYER_TOKEN + "&card=" + card_content;
+    var resp = await api_post(url);
+    if(resp.successful){
         HAND_CARDS.splice(card_slot, 1);
         for(i = 0; i < HAND_CARDS.length; i++){
             document.getElementById("card_"+i).textContent=HAND_CARDS[i];
@@ -209,8 +210,9 @@ async function lay_card(card_slot) {
 }
 
 async function vorbehalt(vorbehalt) {
-		var url = "/api/" + GAME_ID + "/say_vorbehalt?player_token=" + PLAYER_TOKEN + "&vorbehalt=" + vorbehalt;
-    if(await api_post(event).successful){
+	var url = "/api/" + GAME_ID + "/say_vorbehalt?player_token=" + PLAYER_TOKEN + "&vorbehalt=" + vorbehalt;
+    var resp = await api_post(url);
+    if(resp.successful){
         document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
     } else {
         console.log("Vorbehalt is not allowed.");

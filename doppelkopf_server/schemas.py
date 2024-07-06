@@ -11,7 +11,7 @@ class PlayerPrivate(BaseModel):
     points: int = 0
     is_on_turn: bool = False
     cards: List[Card] = list()
-    vorbehalt: Vorbehalt = None
+    vorbehalt: Vorbehalt = Vorbehalt.PENDING
     stiche: List[Stich] = list()
 
     def public(self):
@@ -31,6 +31,16 @@ class PlayerPublic(BaseModel):
     is_on_turn: bool
     vorbehalt: Vorbehalt
 
+class GameInfo(BaseModel):
+    game_id: str = Field(default=None, description="Game ID")
+    round_counter: int = Field(description="The current round number (starting at 1)")
+    state: GameState
+    mode: Vorbehalt = Field(default=None, description="The Vorbehalt which is active")
+    whose_turn: int
+
+class GameCreatedInfo(BaseModel):
+    game_id: str = Field(default=None, description="Game ID")
+
 class KarteEvent(BaseModel):
     played_by: PlayerPublic
     card: Card
@@ -47,17 +57,17 @@ class EventType(Enum):
     KARTE = "KARTE"
     PLAYER_JOINED = "PLAYER_JOINED"
     STICH = "STICH"
-
-    def is_server_privilege(self):
-        return self is not EventType.KARTE
+    GAME_STATE_CHANGED = "GAME_STATE_CHANGED"
 
 class Event(BaseModel):
     e_id: int = Field(default=None, description="Automatically set by server.")
     e_type: EventType = Field(frozen=True)
-    content: KarteEvent | VorbehaltEvent | PlayerPublic = Field(frozen=True, default=None)
+    content: KarteEvent | VorbehaltEvent | PlayerPublic | GameInfo = Field(frozen=True, default=None)
 
     @model_validator(mode='after')
     def check_content_matches_event_type(self):
+        if self.e_type == EventType.GAME_STATE_CHANGED and type(self.content) != GameInfo:
+            raise ValueError('event type and content do not match')
         if self.e_type == EventType.KARTE and type(self.content) != KarteEvent:
             raise ValueError('event type and content do not match')
         if self.e_type == EventType.VORBEHALT and type(self.content) != VorbehaltEvent:
@@ -66,7 +76,3 @@ class Event(BaseModel):
             raise ValueError('event type and content do not match')
         return self
 
-class GameInfo(BaseModel):
-    game_id: str = Field(default=None, description="Game ID")
-    round_counter: int = Field(description="The current round number (starting at 1)")
-    players: List[PlayerPublic] = Field(description="Players in this game in game logical order.")

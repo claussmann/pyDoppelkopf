@@ -53,6 +53,7 @@ class Card(Enum):
         return 0
 
 class Vorbehalt(Enum):
+    PENDING = "PENDING"
     GESUND = "GESUND"
     SCHMEISSEN = "SCHMEISSEN"
     HIDDEN = "HIDDEN"

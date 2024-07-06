@@ -8,16 +8,16 @@ from doppelkopf_server.stich import *
 
 
 class Game():
-    def __init__(self):
+    def __init__(self, id:str):
         self.mutex = Lock()
+        self.id = id
         self.players = dict()
         self.round_cnt = 1
-        self.active_round = None
         self.events = list()
         self.starter = 0
-        self.game_mode = None
+        self.game_mode = Vorbehalt.PENDING
         self.current_stich = None
-        self.state = GameState.WAIT_PLAYERS
+        self._set_state(GameState.WAIT_PLAYERS)
 
     ##################################
     #### Non-Modifying methods #######
@@ -25,14 +25,6 @@ class Game():
 
     def get_events(self, from_e_id) -> List[Event]:
         return self.events[from_e_id:]
-
-    def get_cards(self, player_name, token) -> List[Card]:
-        p = self._authenticate(token)
-        return p.cards
-
-    def get_game_info(self) -> GameInfo:
-        players_public = [p.public() for p in self.players.values()]
-        return GameInfo(round_counter=self.round_cnt, players=players_public)
 
     def get_player_info(self, token) -> PlayerPrivate:
         return self._authenticate(token)
@@ -54,7 +46,7 @@ class Game():
                 if len(self.players) == 4:
                     self._give_cards()
                     self._set_players_turn(self.starter)
-                    self.state = GameState.WAIT_VORBEHALT
+                    self._set_state(GameState.WAIT_VORBEHALT)
                 return p
             raise Exception("Game already full.")
     
@@ -63,15 +55,18 @@ class Game():
             p = self._authenticate(token)
             if self.state != GameState.WAIT_VORBEHALT:
                 return False
-            if p.is_on_turn:
-                p.vorbehalt = vorbehalt
-            self.next_turn()
+            if not p.is_on_turn:
+                return False
+            p.vorbehalt = vorbehalt
+            self._next_turn()
+            v_event = VorbehaltEvent(said_by=p.public(), vorbehalt=vorbehalt)
+            self._publish(Event(e_type=EventType.VORBEHALT, content=v_event))
             if self._which_position_is_on_turn() == self.starter:
                 vorbehalt, position = self._get_highest_vorbehalt_and_position()
                 self.game_mode = vorbehalt
                 self.starter = position
-                self.current_stich = Stich(self.game_mode)
-                self.state = GameState.ROUND_STARTED
+                self.current_stich = Stich(index_started=self.starter)
+                self._set_state(GameState.ROUND_STARTED)
             return True
 
     def process_card(self, token, card) -> bool:
@@ -83,12 +78,12 @@ class Game():
                 return False
             # TODO: Check if player is allowed to put the card (trumpf)
             p.cards.remove(card)
-            self.current_stich.put_card(card)
+            self.current_stich.put_card_by(p.position, card)
             self._publish(Event(e_type=EventType.KARTE, content=KarteEvent(played_by=p.public(), card=card)))
             if self.current_stich.is_complete():
-                winner_pos = self.current_stich.get_winner_position()
+                winner_pos = self.current_stich.get_winner(self.game_mode)
                 self._get_player_by_position(winner_pos).stiche.append(self.current_stich)
-                self.current_stich = Stich()
+                self.current_stich = Stich(index_started=winner_pos)
                 # TODO: Check if round is over.
             else:
                 self._next_turn()
@@ -104,11 +99,11 @@ class Game():
             return self.players[token]
         raise Exception("Token invalid.")
     
-    def _publish(self, event):
+    def _publish(self, event:Event):
         event.e_id = len(self.events)
         self.events.append(event)
     
-    def _set_players_turn(self, position):
+    def _set_players_turn(self, position:int):
         for p in self.players.values():
             if p.position == position:
                 p.is_on_turn = True
@@ -124,8 +119,9 @@ class Game():
         for p in self.players.values():
             if p.is_on_turn:
                 return p.position
+        return -1
     
-    def _get_player_by_position(self, position) -> PlayerPrivate:
+    def _get_player_by_position(self, position:int) -> PlayerPrivate:
         for p in self.players.values():
             if p.position == position:
                 return p
@@ -138,6 +134,15 @@ class Game():
                 winner_pos = p.position
                 game_mode = p.vorbehalt
         return (game_mode, winner_pos)
+
+    def _set_state(self, state:GameState):
+        self.state = state
+        info = GameInfo(game_id=self.id, 
+                        round_counter=self.round_cnt, 
+                        state=self.state,
+                        mode=self.game_mode,
+                        whose_turn=self._which_position_is_on_turn())
+        self._publish(Event(e_type=EventType.GAME_STATE_CHANGED, content=info))
 
     def _give_cards(self):
         card_deck = [
