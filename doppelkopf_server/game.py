@@ -73,6 +73,8 @@ class Game():
     def process_card(self, token, card) -> bool:
         with self.mutex:
             p = self._authenticate(token)
+            if not self.state == GameState.ROUND_STARTED:
+                return False
             if not p.is_on_turn:
                 return False
             if not card in p.cards:
