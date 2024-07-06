@@ -1,14 +1,72 @@
 var PLAYER_TOKEN = "";
 var PLAYER_NAME = "";
+var PLAYER_POSITION = 0;
 var GAME_ID = "";
 var EVENT_ID = 0;
 var PERIODIC_CALL = 0;
-var TABLE_PLAYERS = [];
-var TABLE_CARDS = {};
-var TABLE_VORBEHALTE = {};
+var PERIODIC_CALL_INTERVAL = 5000
+var TABLE_PLAYERS = {0: "--", 1: "--", 2: "--", 3: "--"};
+var TABLE_CARDS = {0: "--", 1: "--", 2: "--", 3: "--"};
+var TABLE_VORBEHALTE = {0: "--", 1: "--", 2: "--", 3: "--"};
 var HAND_CARDS = [];
 var GAMEMODE = "GESUND";
 var CURRENT_TURN = 0;
+var DEBUG = true;
+
+async function api_get(url) {
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+    });
+    if(response.status != 200){
+        alert("Error while calling API");
+		console.log(response);
+        return;
+    }
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
+}
+
+async function api_post(url) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+    });
+    if(response.status != 200){
+        alert("Error while calling API");
+				console.log(response);
+        return;
+    }
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
+}
+
+async function api_post_body(url, body) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json",},
+        cache: "no-cache",
+        body: JSON.stringify(body),
+    });
+    if(response.status != 200){
+        alert("Error (ID: 5)");
+        console.log(response);
+        return false;
+    }
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
+}
 
 function switch_view(view){
     if(view === "CREATE"){
@@ -30,154 +88,101 @@ function switch_view(view){
 
 async function create_new_game() {
     var url = "/api/new_game";
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 1)");
-        return;
-    }
-    var game_obj = await response.json();
-    gid = game_obj.game_id;
-    console.log("INFO: Game ID is " + gid)
-    document.getElementById("gid_field").value = gid;
+    var resp = await api_post(url);
+    document.getElementById("gid_field").value = resp.game_id;
     switch_view("JOIN");
 }
 
 async function login_to_game(game_id, player_name) {
     var url = "/api/" + game_id + "/join?player_name=" + player_name;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 2)");
-        console.log(response);
-        return;
-    }
-    var token_obj = await response.json();
-    PLAYER_TOKEN = token_obj.token;
-    PLAYER_NAME = token_obj.player_name;
+    var player_private = await api_post(url);
+    PLAYER_TOKEN = player_private.token;
+    PLAYER_NAME = player_private.player_name;
+    PLAYER_POSITION = player_private.position;
     GAME_ID = game_id
-    console.log("INFO: Your token is " + PLAYER_TOKEN);
     document.getElementById("display_game_id").textContent=GAME_ID;
     switch_view("PLAY")
-    PERIODIC_CALL = setInterval(process_events, 2000);
+    PERIODIC_CALL = setInterval(process_events, PERIODIC_CALL_INTERVAL);
 }
 
 async function process_events() {
     var url = "/api/" + GAME_ID + "/event?from_event_id=" + EVENT_ID;
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 3)");
-        console.log(response);
-        return;
-    }
-    var event_list = await response.json();
+    var event_list = await api_get(url);
     event_list.forEach( (e) => {
-        console.log(e);
         EVENT_ID = e.e_id + 1;
         switch(e.e_type){
             case "KARTE":
-                TABLE_CARDS[e.sender] = e.content;
+                TABLE_CARDS[e.content.played_by.position] = e.content.card;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
             case "VORBEHALT":
-                TABLE_VORBEHALTE[e.sender] = e.content;
+                TABLE_VORBEHALTE[e.content.said_by.position] = e.content.vorbehalt;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
             case "PLAYER_JOINED":
-                var joined_name = e.text_content;
-                TABLE_PLAYERS.push(joined_name);
-                TABLE_CARDS[joined_name];
+                TABLE_PLAYERS[e.content.position] = e.content.name;
                 update_table();
                 break;
-            case "WAIT_VORBEHALT":
-                update_own_cards();
-                document.getElementById("vorbehalt").style.display = "block";
-                document.getElementById("absage").style.display = "none";
-                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
-                document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
-                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
-                TABLE_VORBEHALTE = {};
-                update_table();
-                break;
-            case "GAMEMODE":
-                document.getElementById("vorbehalt").style.display = "none";
-                document.getElementById("absage").style.display = "block";
-                GAMEMODE = e.content;
-                document.getElementById("display_game_mode").textContent=GAMEMODE;
-                break;
-            case "ROUND_STARTED":
-                document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
-                CURRENT_TURN = TABLE_PLAYERS.indexOf(e.text_content);
-                update_table();
-                break;
+            case "GAME_STATE_CHANGED":
+                switch(e.content.state){
+                    case "WAIT_VORBEHALT":
+                        update_own_cards();
+                        document.getElementById("vorbehalt").style.display = "block";
+                        document.getElementById("absage").style.display = "none";
+                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = true);
+                        document.querySelectorAll("[id^=vorbehalt_]").forEach(item => item.disabled = false);
+                        TABLE_VORBEHALTE = {0:"", 1:"", 2:"", 3:""};
+                        update_table();
+                        break;
+                    case "ROUND_STARTED":
+                        document.querySelectorAll("[id^=card_]").forEach(item => item.disabled = false);
+                        document.getElementById("vorbehalt").style.display = "none";
+                        document.getElementById("absage").style.display = "block";
+                        GAMEMODE = e.content.mode;
+                        document.getElementById("display_game_mode").textContent=GAMEMODE;
+                        CURRENT_TURN = e.content.whose_turn;
+                        update_table();
+                        break;
+                }
         }
     })
 }
 
 function update_table(){
-    var own_index = TABLE_PLAYERS.indexOf(PLAYER_NAME);
-    var own_name = TABLE_PLAYERS[own_index];
-    var left_name = TABLE_PLAYERS[(own_index + 1) % 4];
-    if(left_name == undefined) left_name = "--";
-    var front_name = TABLE_PLAYERS[(own_index + 2) % 4];
-    if(front_name == undefined) front_name = "--";
-    var right_name = TABLE_PLAYERS[(own_index + 3) % 4];
-    if(right_name == undefined) right_name = "--";
+    document.getElementById("player_self").textContent=TABLE_PLAYERS[PLAYER_POSITION];
+    document.getElementById("player_left").textContent=TABLE_PLAYERS[(PLAYER_POSITION+1)%4];
+    document.getElementById("player_front").textContent=TABLE_PLAYERS[(PLAYER_POSITION+2)%4];
+    document.getElementById("player_right").textContent=TABLE_PLAYERS[(PLAYER_POSITION+3)%4];
 
-    document.getElementById("player_self").textContent=own_name;
-    document.getElementById("player_left").textContent=left_name;
-    document.getElementById("player_front").textContent=front_name;
-    document.getElementById("player_right").textContent=right_name;
+    document.getElementById("table_card_self").textContent=TABLE_CARDS[PLAYER_POSITION];
+    document.getElementById("table_card_left").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_card_front").textContent=TABLE_CARDS[(PLAYER_POSITION+2)%4];
+    document.getElementById("table_card_right").textContent=TABLE_CARDS[(PLAYER_POSITION+3)%4];
 
-    document.getElementById("table_card_self").textContent=TABLE_CARDS[own_name];
-    document.getElementById("table_card_left").textContent=TABLE_CARDS[left_name];
-    document.getElementById("table_card_front").textContent=TABLE_CARDS[front_name];
-    document.getElementById("table_card_right").textContent=TABLE_CARDS[right_name];
-
-    document.getElementById("table_vorbehalt_self").textContent=TABLE_VORBEHALTE[own_name];
-    document.getElementById("table_vorbehalt_left").textContent=TABLE_VORBEHALTE[left_name];
-    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[front_name];
-    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[right_name];
+    document.getElementById("table_vorbehalt_self").textContent=TABLE_VORBEHALTE[PLAYER_POSITION];
+    document.getElementById("table_vorbehalt_left").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+2)%4];
+    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+3)%4];
 
     document.getElementById("player_self").classList.remove("table_name_active");
     document.getElementById("player_left").classList.remove("table_name_active");
     document.getElementById("player_front").classList.remove("table_name_active");
     document.getElementById("player_right").classList.remove("table_name_active");
     switch(CURRENT_TURN){
-        case own_index: document.getElementById("player_self").classList.add("table_name_active"); break;
-        case (own_index + 1) % 4: document.getElementById("player_left").classList.add("table_name_active"); break;
-        case (own_index + 2) % 4: document.getElementById("player_front").classList.add("table_name_active"); break;
-        case (own_index + 3) % 4: document.getElementById("player_right").classList.add("table_name_active"); break;
+        case PLAYER_POSITION: document.getElementById("player_self").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 1) % 4: document.getElementById("player_left").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 2) % 4: document.getElementById("player_front").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 3) % 4: document.getElementById("player_right").classList.add("table_name_active"); break;
     }
 }
 
 async function update_own_cards(){
-    var url = "/api/" + GAME_ID + "/cards?player_token=" + PLAYER_TOKEN + "&player_name=" + PLAYER_NAME;
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-    });
-    if(response.status != 200){
-        alert("Error (ID: 4)");
-        console.log(response);
-        return;
-    }
-    HAND_CARDS = await response.json();
+    var url = "/api/" + GAME_ID + "/playerinfo?player_token=" + PLAYER_TOKEN;
+    var resp = await api_get(url)
+    HAND_CARDS = resp.cards;
     sort_cards();
-    console.log(HAND_CARDS);
     for(i = 0; i < HAND_CARDS.length; i++){
         document.getElementById("card_"+i).textContent=HAND_CARDS[i];
     }
@@ -188,12 +193,9 @@ async function update_own_cards(){
 
 async function lay_card(card_slot) {
     var card_content = HAND_CARDS[card_slot];
-    var event = {
-        "sender": PLAYER_NAME,
-        "e_type": "KARTE",
-        "content": card_content,
-    }
-    if(await send_event(event)){
+	var url = "/api/" + GAME_ID + "/lay_card?player_token=" + PLAYER_TOKEN + "&card=" + card_content;
+    var resp = await api_post(url);
+    if(resp.successful){
         HAND_CARDS.splice(card_slot, 1);
         for(i = 0; i < HAND_CARDS.length; i++){
             document.getElementById("card_"+i).textContent=HAND_CARDS[i];
@@ -208,33 +210,13 @@ async function lay_card(card_slot) {
 }
 
 async function vorbehalt(vorbehalt) {
-    var event = {
-        "sender": PLAYER_NAME,
-        "e_type": "VORBEHALT",
-        "content": vorbehalt,
-    }
-    if(await send_event(event)){
+	var url = "/api/" + GAME_ID + "/say_vorbehalt?player_token=" + PLAYER_TOKEN + "&vorbehalt=" + vorbehalt;
+    var resp = await api_post(url);
+    if(resp.successful){
         document.getElementById("vorbehalt_"+vorbehalt).disabled = true;
     } else {
         console.log("Vorbehalt is not allowed.");
     }
-}
-
-async function send_event(event) {
-    var url = "/api/" + GAME_ID + "/event?player_token=" + PLAYER_TOKEN;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json",},
-        cache: "no-cache",
-        body: JSON.stringify(event),
-    });
-    if(response.status != 200){
-        alert("Error (ID: 5)");
-        console.log(response);
-        return false;
-    }
-    var event_resp = await response.json();
-    return event_resp.successful;
 }
 
 function sort_cards(){

@@ -3,7 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 
 from doppelkopf_server.game import Game
-from doppelkopf_server.schemas import *
+from doppelkopf_server.event import Event
+from doppelkopf_server.schema import *
+from doppelkopf_server.player import PlayerPrivate
 from typing import List, Annotated
 import secrets
 
@@ -14,32 +16,21 @@ app.mount("/ui", StaticFiles(directory="doppelkopf_server/frontend"), name="ui")
 app.games = dict()
 
 @app.get("/")
-async def redirect_to_user_interface() -> GameInfo:
+async def redirect_to_user_interface():
     """
     Forward to UI
     """
     return RedirectResponse("/ui/index.html")
 
 @app.post("/api/new_game")
-def new_game() -> GameInfo:
+def new_game() -> GameCreatedInfo:
     """
     Creates a new game where players can join.
     The game is reachable by the game id returned on a successful call.
     """
-    gid = str(secrets.token_hex(6))
-    app.games[gid] = Game()
-    ret = app.games[gid].get_game_info()
-    ret.game_id = gid
-    return ret
-
-@app.get("/api/{game_id}")
-async def get_game_info(game_id) -> GameInfo:
-    """
-    Get game info such as players and round count.
-    """
-    ret = app.games[game_id].get_game_info()
-    ret.game_id = game_id
-    return ret
+    gid = str(secrets.token_hex(10))
+    app.games[gid] = Game(gid)
+    return GameCreatedInfo(game_id=gid)
 
 @app.post("/api/{game_id}/join")
 def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, pattern="^[0-9A-Za-z\\-\\_]*$")]) -> PlayerPrivate:
@@ -50,27 +41,34 @@ def join(game_id, player_name:Annotated[str, Query(max_length=20, min_length=2, 
     """
     return app.games[game_id].join(player_name)
 
-@app.get("/api/{game_id}/cards")
-async def get_cards(game_id, player_name, player_token:str) -> List[Card]:
+@app.get("/api/{game_id}/playerinfo")
+async def get_cards(game_id, player_token:str) -> PlayerPrivate:
     """
     Get the cards the player has on the hand.
     Played cards will not appear here.
     """
-    return app.games[game_id].get_cards(player_name, player_token)
+    return app.games[game_id].get_player_info(player_token)
 
 @app.get("/api/{game_id}/event")
 async def get_events(game_id, from_event_id:int=0) -> List[Event]:
     """
     Get all events in this game in chronological order.
-    If provides, only events after the provided event id are returned.
+    If provided, only events after the provided event id are returned.
     """
     return app.games[game_id].get_events(from_event_id)
 
-@app.post("/api/{game_id}/event")
-def new_event(game_id, player_token:str, event:Event) -> EventResponse:
+@app.post("/api/{game_id}/lay_card")
+def lay_card(game_id, player_token:str, card:Card) -> EventResponse:
     """
-    Send a new event.
-    The event will be validated, i.e. it is checked whether the action is legal.
+    Lay a card.
     """
-    ret = app.games[game_id].new_event(player_token, event)
+    ret = app.games[game_id].process_card(player_token, card)
+    return EventResponse(successful=ret)
+
+@app.post("/api/{game_id}/say_vorbehalt")
+def say_vorbehalt(game_id, player_token:str, vorbehalt:Vorbehalt) -> EventResponse:
+    """
+    Say a vorbehalt.
+    """
+    ret = app.games[game_id].process_vorbehalt(player_token, vorbehalt)
     return EventResponse(successful=ret)
