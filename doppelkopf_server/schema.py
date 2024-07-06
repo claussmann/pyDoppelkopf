@@ -1,4 +1,5 @@
 from enum import Enum
+from pydantic import BaseModel, Field, model_validator
 
 class Card(Enum):
     # Special
@@ -66,3 +67,9 @@ class GameState(Enum):
     WAIT_VORBEHALT = "WAIT_VORBEHALT"
     WAIT_PLAYERS = "WAIT_PLAYERS"
     ROUND_STARTED = "ROUND_STARTED"
+
+class GameCreatedInfo(BaseModel):
+    game_id: str = Field(default=None, description="Game ID")
+
+class EventResponse(BaseModel):
+    successful: bool

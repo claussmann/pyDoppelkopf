@@ -3,7 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 
 from doppelkopf_server.game import Game
-from doppelkopf_server.schemas import *
+from doppelkopf_server.event import Event
+from doppelkopf_server.schema import *
+from doppelkopf_server.player import PlayerPrivate
 from typing import List, Annotated
 import secrets
 
@@ -14,7 +16,7 @@ app.mount("/ui", StaticFiles(directory="doppelkopf_server/frontend"), name="ui")
 app.games = dict()
 
 @app.get("/")
-async def redirect_to_user_interface() -> GameInfo:
+async def redirect_to_user_interface():
     """
     Forward to UI
     """

@@ -1,6 +1,6 @@
 import time
-from doppelkopf_server.schemas import *
-from pydantic import BaseModel, Field, model_validator
+from doppelkopf_server.schema import *
+from pydantic import BaseModel
 
 
 class Stich(BaseModel):

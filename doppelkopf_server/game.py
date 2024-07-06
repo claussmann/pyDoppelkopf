@@ -2,8 +2,9 @@ import secrets
 import random
 from threading import Lock
 from typing import List
-from doppelkopf_server.schemas import *
-from doppelkopf_server.enums import *
+from doppelkopf_server.player import *
+from doppelkopf_server.event import *
+from doppelkopf_server.schema import *
 from doppelkopf_server.stich import *
 
 
@@ -42,7 +43,7 @@ class Game():
                     position=len(self.players)
                 )
                 self.players[p.token] = p
-                self._notify_event(EventType.PLAYER_JOINED, content=p.public())
+                self._notify_event(EventType.PLAYER_JOINED, p.public())
                 if len(self.players) == 4:
                     self._give_cards()
                     self._set_players_turn(self.starter)
@@ -60,7 +61,7 @@ class Game():
             p.vorbehalt = vorbehalt
             self._next_turn()
             v_event = VorbehaltEvent(said_by=p.public(), vorbehalt=vorbehalt)
-            self._notify_event(EventType.VORBEHALT, content=v_event)
+            self._notify_event(EventType.VORBEHALT, v_event)
             if self._which_position_is_on_turn() == self.starter:
                 vorbehalt, position = self._get_highest_vorbehalt_and_position()
                 self.game_mode = vorbehalt
@@ -137,12 +138,12 @@ class Game():
 
     def _set_state(self, state:GameState):
         self.state = state
-        info = GameInfo(game_id=self.id, 
+        info = GameStatusEvent(game_id=self.id, 
                         round_counter=self.round_cnt, 
                         state=self.state,
                         mode=self.game_mode,
                         whose_turn=self._which_position_is_on_turn())
-        self._notify_event(EventType.GAME_STATE_CHANGED, content=info)
+        self._notify_event(EventType.GAME_STATE_CHANGED, info)
 
     def _give_cards(self):
         card_deck = [
