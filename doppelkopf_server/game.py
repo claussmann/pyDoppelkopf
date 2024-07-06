@@ -42,7 +42,7 @@ class Game():
                     position=len(self.players)
                 )
                 self.players[p.token] = p
-                self._publish(Event(e_type=EventType.PLAYER_JOINED, content=p.public()))
+                self._notify_event(EventType.PLAYER_JOINED, content=p.public())
                 if len(self.players) == 4:
                     self._give_cards()
                     self._set_players_turn(self.starter)
@@ -60,7 +60,7 @@ class Game():
             p.vorbehalt = vorbehalt
             self._next_turn()
             v_event = VorbehaltEvent(said_by=p.public(), vorbehalt=vorbehalt)
-            self._publish(Event(e_type=EventType.VORBEHALT, content=v_event))
+            self._notify_event(EventType.VORBEHALT, content=v_event)
             if self._which_position_is_on_turn() == self.starter:
                 vorbehalt, position = self._get_highest_vorbehalt_and_position()
                 self.game_mode = vorbehalt
@@ -79,7 +79,7 @@ class Game():
             # TODO: Check if player is allowed to put the card (trumpf)
             p.cards.remove(card)
             self.current_stich.put_card_by(p.position, card)
-            self._publish(Event(e_type=EventType.KARTE, content=KarteEvent(played_by=p.public(), card=card)))
+            self._notify_event(EventType.KARTE, KarteEvent(played_by=p.public(), card=card))
             if self.current_stich.is_complete():
                 winner_pos = self.current_stich.get_winner(self.game_mode)
                 self._get_player_by_position(winner_pos).stiche.append(self.current_stich)
@@ -99,9 +99,9 @@ class Game():
             return self.players[token]
         raise Exception("Token invalid.")
     
-    def _publish(self, event:Event):
-        event.e_id = len(self.events)
-        self.events.append(event)
+    def _notify_event(self, etype:EventType, econtent):
+        e = Event(e_id=len(self.events), e_type=etype, content=econtent)
+        self.events.append(e)
     
     def _set_players_turn(self, position:int):
         for p in self.players.values():
@@ -142,7 +142,7 @@ class Game():
                         state=self.state,
                         mode=self.game_mode,
                         whose_turn=self._which_position_is_on_turn())
-        self._publish(Event(e_type=EventType.GAME_STATE_CHANGED, content=info))
+        self._notify_event(EventType.GAME_STATE_CHANGED, content=info)
 
     def _give_cards(self):
         card_deck = [
