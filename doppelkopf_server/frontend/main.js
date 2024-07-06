@@ -1,10 +1,12 @@
 var PLAYER_TOKEN = "";
 var PLAYER_NAME = "";
+var PLAYER_POSITION = 0;
 var GAME_ID = "";
 var EVENT_ID = 0;
 var PERIODIC_CALL = 0;
-var TABLE_PLAYERS = [];
-var TABLE_CARDS = {};
+var PERIODIC_CALL_INTERVAL = 5000
+var TABLE_PLAYERS = {0: "--", 1: "--", 2: "--", 3: "--"};
+var TABLE_CARDS = {0: "--", 1: "--", 2: "--", 3: "--"};
 var TABLE_VORBEHALTE = {};
 var HAND_CARDS = [];
 var GAMEMODE = "GESUND";
@@ -19,13 +21,14 @@ async function api_get(url) {
     });
     if(response.status != 200){
         alert("Error while calling API");
-				console.log(response);
+		console.log(response);
         return;
     }
-		if(DEBUG){
-			console.log(response.json());
-		}
-    return await response.json();
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
 }
 
 async function api_post(url) {
@@ -39,10 +42,11 @@ async function api_post(url) {
 				console.log(response);
         return;
     }
-		if(DEBUG){
-			console.log(response.json());
-		}
-    return await response.json();
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
 }
 
 async function api_post_body(url, body) {
@@ -57,7 +61,11 @@ async function api_post_body(url, body) {
         console.log(response);
         return false;
     }
-    return await response.json();
+    var ret = await response.json();
+    if(DEBUG){
+        console.log(ret);
+    }
+    return ret;
 }
 
 function switch_view(view){
@@ -91,10 +99,11 @@ async function login_to_game(game_id, player_name) {
     var token_obj = await api_post(url);
     PLAYER_TOKEN = token_obj.token;
     PLAYER_NAME = token_obj.player_name;
+    PLAYER_POSITION = token_obj.position;
     GAME_ID = game_id
     document.getElementById("display_game_id").textContent=GAME_ID;
     switch_view("PLAY")
-    PERIODIC_CALL = setInterval(process_events, 2000);
+    PERIODIC_CALL = setInterval(process_events, PERIODIC_CALL_INTERVAL);
 }
 
 async function process_events() {
@@ -109,14 +118,12 @@ async function process_events() {
                 update_table();
                 break;
             case "VORBEHALT":
-						//Todo
-                TABLE_VORBEHALTE[e.content.name] = e.content.vorbehalt;
+                TABLE_VORBEHALTE[e.content.position] = e.content.vorbehalt;
                 CURRENT_TURN = (CURRENT_TURN + 1) % 4;
                 update_table();
                 break;
             case "PLAYER_JOINED":
-                var joined_name = e.content.name;
-                TABLE_PLAYERS.push(joined_name);
+                TABLE_PLAYERS[e.content.position] = e.content.name;
                 update_table();
                 break;
             case "WAIT_VORBEHALT":
@@ -145,39 +152,30 @@ async function process_events() {
 }
 
 function update_table(){
-    var own_index = TABLE_PLAYERS.indexOf(PLAYER_NAME);
-    var own_name = TABLE_PLAYERS[own_index];
-    var left_name = TABLE_PLAYERS[(own_index + 1) % 4];
-    if(left_name == undefined) left_name = "--";
-    var front_name = TABLE_PLAYERS[(own_index + 2) % 4];
-    if(front_name == undefined) front_name = "--";
-    var right_name = TABLE_PLAYERS[(own_index + 3) % 4];
-    if(right_name == undefined) right_name = "--";
+    document.getElementById("player_self").textContent=TABLE_PLAYERS[PLAYER_POSITION];
+    document.getElementById("player_left").textContent=TABLE_PLAYERS[(PLAYER_POSITION+1)%4];
+    document.getElementById("player_front").textContent=TABLE_PLAYERS[(PLAYER_POSITION+2)%4];
+    document.getElementById("player_right").textContent=TABLE_PLAYERS[(PLAYER_POSITION+3)%4];
 
-    document.getElementById("player_self").textContent=own_name;
-    document.getElementById("player_left").textContent=left_name;
-    document.getElementById("player_front").textContent=front_name;
-    document.getElementById("player_right").textContent=right_name;
+    document.getElementById("table_card_self").textContent=TABLE_CARDS[PLAYER_POSITION];
+    document.getElementById("table_card_left").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_card_front").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_card_right").textContent=TABLE_CARDS[(PLAYER_POSITION+1)%4];
 
-    document.getElementById("table_card_self").textContent=TABLE_CARDS[own_name];
-    document.getElementById("table_card_left").textContent=TABLE_CARDS[left_name];
-    document.getElementById("table_card_front").textContent=TABLE_CARDS[front_name];
-    document.getElementById("table_card_right").textContent=TABLE_CARDS[right_name];
-
-    document.getElementById("table_vorbehalt_self").textContent=TABLE_VORBEHALTE[own_name];
-    document.getElementById("table_vorbehalt_left").textContent=TABLE_VORBEHALTE[left_name];
-    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[front_name];
-    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[right_name];
+    document.getElementById("table_vorbehalt_self").textContent=TABLE_VORBEHALTE[PLAYER_POSITION];
+    document.getElementById("table_vorbehalt_left").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_vorbehalt_front").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
+    document.getElementById("table_vorbehalt_right").textContent=TABLE_VORBEHALTE[(PLAYER_POSITION+1)%4];
 
     document.getElementById("player_self").classList.remove("table_name_active");
     document.getElementById("player_left").classList.remove("table_name_active");
     document.getElementById("player_front").classList.remove("table_name_active");
     document.getElementById("player_right").classList.remove("table_name_active");
     switch(CURRENT_TURN){
-        case own_index: document.getElementById("player_self").classList.add("table_name_active"); break;
-        case (own_index + 1) % 4: document.getElementById("player_left").classList.add("table_name_active"); break;
-        case (own_index + 2) % 4: document.getElementById("player_front").classList.add("table_name_active"); break;
-        case (own_index + 3) % 4: document.getElementById("player_right").classList.add("table_name_active"); break;
+        case PLAYER_POSITION: document.getElementById("player_self").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 1) % 4: document.getElementById("player_left").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 2) % 4: document.getElementById("player_front").classList.add("table_name_active"); break;
+        case (PLAYER_POSITION + 3) % 4: document.getElementById("player_right").classList.add("table_name_active"); break;
     }
 }
 
